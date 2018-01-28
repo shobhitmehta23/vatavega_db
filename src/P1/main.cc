@@ -12,11 +12,6 @@ extern struct AndList *final;
 
 int main () {
 
-	int a =4;
-	int b=3;
-
-	int c = a+b;
-	cout << "test";
 	// try to parse the CNF
 	cout << "Enter in your CNF: ";
   	if (yyparse() != 0) {
