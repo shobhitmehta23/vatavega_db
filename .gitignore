@@ -6,6 +6,7 @@
 *.exe
 *.o
 *.so
+*.out
 
 # OS generated files #
 ######################
@@ -16,3 +17,10 @@
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# specific files not covered by above scenarios #
+#################################################
+src/P1/lex.yy.c
+src/P1/main
+src/P1/y.tab.c
+src/P1/y.tab.h
