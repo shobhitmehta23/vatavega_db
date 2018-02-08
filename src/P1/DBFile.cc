@@ -23,12 +23,30 @@ int DBFile::Create(const char *f_path, fType f_type, void *startup) {
 
 void DBFile::Load(Schema &f_schema, const char *loadpath) {
 	//open the given file
-
 	FILE inputFile = fopen(loadpath, "r");
 	//exit if file cannot be opened
 	if(inputFile == 0){
 		exit(1);
 	}
+
+	Page tempPage;
+	Record tempRecord;
+	//load the last page
+	file.GetPage(&tempPage, file.GetLength()-2);
+
+	//call suck next record till EOF
+	while(tempRecord.SuckNextRecord(&f_schema, &inputFile) ==1){
+		//add record to the end of page.
+		if(tempPage.Append(&tempRecord)){
+			continue;
+		}
+		else{
+			//The page is full
+			//write the page to the file.
+			file.AddPage(&tempPage, file.GetLength()-2);
+		}
+	}
+
 }
 
 int DBFile::Open(const char *f_path) {
@@ -69,14 +87,14 @@ void DBFile::Add(Record &rec) {
 	} else {
 		//FIXME actually we should  not deem that the current last page to be the one which is half filled, it can
 		// be any page like second last or even before that. For now considering last page is the one to be added to.
-		file.GetPage(&temp, file.GetLength() - 1);		// Get the last page.
+		file.GetPage(&temp, file.GetLength() - 2);		// Get the last page. which is at -2
 		if (temp.Append(&rec) == 1) //append record to the last page
 				{
-			file.AddPage(&temp, file.GetLength() - 1); //write the last page.
+			file.AddPage(&temp, file.GetLength() - 2); //write the last page.
 		} else {
 			temp.EmptyItOut();
 			temp.Append(&rec);
-			file.AddPage(&temp, file.GetLength());
+			file.AddPage(&temp, file.GetLength()-1); // the new page should go at last -1
 		}
 	}
 	rec.bits = NULL; //consume the record
