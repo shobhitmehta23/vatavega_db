@@ -7,13 +7,17 @@
 #include "File.h"
 #include "Comparison.h"
 #include "ComparisonEngine.h"
+#include "File.h"
 
 typedef enum {heap, sorted, tree} fType;
 
 // stub DBFile header..replace it with your own DBFile.h 
 
 class DBFile {
-
+private:
+	File file;
+	Page page;
+	off_t currentPageIndex;
 public:
 	DBFile (); 
 
