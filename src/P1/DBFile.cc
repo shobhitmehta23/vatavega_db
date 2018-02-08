@@ -25,27 +25,32 @@ void DBFile::Load(Schema &f_schema, const char *loadpath) {
 	//open the given file
 	FILE inputFile = fopen(loadpath, "r");
 	//exit if file cannot be opened
-	if(inputFile == 0){
+	if (inputFile == 0) {
 		exit(1);
 	}
 
 	Page tempPage;
 	Record tempRecord;
+	off_t tempPageIndex = file.GetLength() - 2; // initialize to point to the current last page.
+
 	//load the last page
-	file.GetPage(&tempPage, file.GetLength()-2);
+	file.GetPage(&tempPage, tempPageIndex);
 
 	//call suck next record till EOF
-	while(tempRecord.SuckNextRecord(&f_schema, &inputFile) ==1){
+	while (tempRecord.SuckNextRecord(&f_schema, &inputFile) == 1) {
 		//add record to the end of page.
-		if(tempPage.Append(&tempRecord)){
+		if (tempPage.Append(&tempRecord)) {
 			continue;
-		}
-		else{
+		} else {
 			//The page is full
 			//write the page to the file.
-			file.AddPage(&tempPage, file.GetLength()-2);
+			file.AddPage(&tempPage, tempPageIndex);
+			tempPage.EmptyItOut();
+			tempPageIndex++; // increment the page index. This will be the new last.
+			tempPage.Append(&tempRecord);
 		}
 	}
+	file.AddPage(&tempPage, tempPageIndex); //Add the last page.
 
 }
 
