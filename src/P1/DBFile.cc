@@ -111,7 +111,7 @@ int DBFile::GetNext(Record &fetchme) {
 		currentPageIndex++; //increment the current page index page for the next page.
 
 		//check if next page exists.
-		if (currentPageIndex < file.GetLength()) {
+		if (currentPageIndex < file.GetLength()-1) {
 			file.GetPage(&page, currentPageIndex); //load the next page.
 			return page.GetFirst(&fetchme); // return the first record.
 		} else {
