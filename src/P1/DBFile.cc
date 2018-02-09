@@ -32,6 +32,13 @@ void DBFile::Load(Schema &f_schema, const char *loadpath) {
 	Page tempPage;
 	Record tempRecord;
 	off_t tempPageIndex = file.GetLength() - 2; // initialize to point to the current last page.
+	if(tempPageIndex<0) {
+		//This means the file has no pages. So create the first one.
+		tempPageIndex =0;
+		file.AddPage(&tempPage, 0);
+
+	}
+
 
 	//load the last page
 	file.GetPage(&tempPage, tempPageIndex);

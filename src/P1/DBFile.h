@@ -8,6 +8,7 @@
 #include "Comparison.h"
 #include "ComparisonEngine.h"
 #include "File.h"
+#include "cstdlib"
 
 typedef enum {heap, sorted, tree} fType;
 
