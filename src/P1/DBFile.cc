@@ -15,15 +15,15 @@ DBFile::DBFile() {
 }
 
 int DBFile::Create(const char *f_path, fType f_type, void *startup) {
-	char* path = f_path;
-	file.Open(0, path); // the first option of Open() when set to 0 create the file.
+	//char* path = f_path;
+	file.Open(0, (char*)f_path); // the first option of Open() when set to 0 create the file.
 	return 1;
 	//FIXME exception handling is recommended for failure cases for graceful exit.
 }
 
 void DBFile::Load(Schema &f_schema, const char *loadpath) {
 	//open the given file
-	FILE inputFile = fopen(loadpath, "r");
+	FILE* inputFile = fopen(loadpath, "r");
 	//exit if file cannot be opened
 	if (inputFile == 0) {
 		exit(1);
@@ -37,7 +37,7 @@ void DBFile::Load(Schema &f_schema, const char *loadpath) {
 	file.GetPage(&tempPage, tempPageIndex);
 
 	//call suck next record till EOF
-	while (tempRecord.SuckNextRecord(&f_schema, &inputFile) == 1) {
+	while (tempRecord.SuckNextRecord(&f_schema, inputFile) == 1) {
 		//add record to the end of page.
 		if (tempPage.Append(&tempRecord)) {
 			continue;
@@ -55,9 +55,9 @@ void DBFile::Load(Schema &f_schema, const char *loadpath) {
 }
 
 int DBFile::Open(const char *f_path) {
-	char *path = f_path;
+	//char *path = f_path;
 	cout << "Open a DbFile" << endl;
-	file.Open(1, path);
+	file.Open(1, (char*)f_path);
 	MoveFirst();
 	//FIXME exception handling is recommended for failure cases for graceful exit.
 	return 1; // return 1 on success.
@@ -102,7 +102,7 @@ void DBFile::Add(Record &rec) {
 			file.AddPage(&temp, file.GetLength()-1); // the new page should go at last -1
 		}
 	}
-	rec.bits = NULL; //consume the record
+	//&rec=NULL; //consume the record
 }
 
 int DBFile::GetNext(Record &fetchme) {
