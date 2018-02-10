@@ -8,72 +8,69 @@
 #include "Defs.h"
 #include <iostream>
 
-// stub file .. replace it with your own DBFile.cc
 
 DBFile::DBFile() {
-	currentPageIndex = 0;
+	current_page_index = 0;
 }
 
 int DBFile::Create(const char *f_path, fType f_type, void *startup) {
-	//char* path = f_path;
-	file.Open(0, (char*)f_path); // the first option of Open() when set to 0 create the file.
+	file.Open(0, (char*)f_path);  // the first option of Open() when set to 0 creates the file.
 	return 1;
-	//FIXME exception handling is recommended for failure cases for graceful exit.
 }
 
 void DBFile::Load(Schema &f_schema, const char *loadpath) {
 	//open the given file
 	FILE* inputFile = fopen(loadpath, "r");
+
 	//exit if file cannot be opened
 	if (inputFile == 0) {
+		cerr << "could not open test file  " << loadpath << "\n";
 		exit(1);
 	}
 
-	Page tempPage;
-	Record tempRecord;
-	off_t tempPageIndex = file.GetLength() - 2; // initialize to point to the current last page.
-	if(tempPageIndex<0) {
-		//This means the file has no pages. So create the first one.
-		tempPageIndex =0;
-		file.AddPage(&tempPage, 0);
+	Page temp_page;
+	Record temp_record;
+	off_t temp_page_index = getLastPageIndex();
 
+	if(temp_page_index < 0) {
+		// This means the file has no pages. So create the first one.
+		temp_page_index = 0;
+		file.AddPage(&temp_page, 0);
 	}
 
 
 	//load the last page
-	file.GetPage(&tempPage, tempPageIndex);
+	file.GetPage(&temp_page, temp_page_index);
 
 	//call suck next record till EOF
-	while (tempRecord.SuckNextRecord(&f_schema, inputFile) == 1) {
+	while (temp_record.SuckNextRecord(&f_schema, inputFile) == 1) {
 		//add record to the end of page.
-		if (tempPage.Append(&tempRecord)) {
+		if (temp_page.Append(&temp_record)) {
 			continue;
 		} else {
-			//The page is full
-			//write the page to the file.
-			file.AddPage(&tempPage, tempPageIndex);
-			tempPage.EmptyItOut();
-			tempPageIndex++; // increment the page index. This will be the new last.
-			tempPage.Append(&tempRecord);
+			// The page is full
+			// write the page to the file.
+			file.AddPage(&temp_page, temp_page_index);
+			temp_page.EmptyItOut();
+			temp_page_index++;  // increment the page index. This will be the new last.
+			temp_page.Append(&temp_record);
 		}
 	}
-	file.AddPage(&tempPage, tempPageIndex); //Add the last page.
+	file.AddPage(&temp_page, temp_page_index); //Add the last page.
 
 }
 
 int DBFile::Open(const char *f_path) {
-	//char *path = f_path;
 	cout << "Open a DbFile" << endl;
 	file.Open(1, (char*)f_path);
 	MoveFirst();
-	//FIXME exception handling is recommended for failure cases for graceful exit.
-	return 1; // return 1 on success.
+	return 1;  // Success.
 }
 
 void DBFile::MoveFirst() {
-	currentPageIndex = 0; //set current page index to 0 for the first page.
+	current_page_index = 0; //set current page index to 0 for the first page.
 	if (file.GetLength() != 0) {
-		file.GetPage(&page, currentPageIndex);
+		file.GetPage(&page, current_page_index);
 	}
 }
 
@@ -88,43 +85,38 @@ int DBFile::Close() {
 
 void DBFile::Add(Record &rec) {
 
-	Page temp; //temporary page to hold the record.
+	Page temp_page; //temporary page to hold the record.
 	//case of a new file.
 	if (file.GetLength() == 0) {
-		if (temp.Append(&rec) == 1) { //append the record to the temp page.
-			file.AddPage(&temp, 0);
+		if (temp_page.Append(&rec) == 1) {  // append the record to the temp page.
+			file.AddPage(&temp_page, 0);
 		} else {
-			exit(1); //exit with error.
+			exit(1);  // exit with error.
 		}
 	} else {
-		//FIXME actually we should  not deem that the current last page to be the one which is half filled, it can
-		// be any page like second last or even before that. For now considering last page is the one to be added to.
-		file.GetPage(&temp, file.GetLength() - 2);		// Get the last page. which is at -2
-		if (temp.Append(&rec) == 1) //append record to the last page
-				{
-			file.AddPage(&temp, file.GetLength() - 2); //write the last page.
+		file.GetPage(&temp_page, getLastPageIndex());
+		if (temp_page.Append(&rec) == 1)  {  // append record to the last page
+			file.AddPage(&temp_page, getLastPageIndex());  // write the last page.
 		} else {
-			temp.EmptyItOut();
-			temp.Append(&rec);
-			file.AddPage(&temp, file.GetLength()-1); // the new page should go at last -1
+			temp_page.EmptyItOut();
+			temp_page.Append(&rec);
+			file.AddPage(&temp_page, getNewPageIndex());
 		}
 	}
-	//&rec=NULL; //consume the record
 }
 
 int DBFile::GetNext(Record &fetchme) {
 	// try to get the first record from the current page if success leave else try next page.
 	if (page.GetFirst(&fetchme) == 0) {
-		currentPageIndex++; //increment the current page index page for the next page.
+		current_page_index++; //increment the current page index page for the next page.
 
 		//check if next page exists.
-		if (currentPageIndex < file.GetLength()-1) {
-			file.GetPage(&page, currentPageIndex); //load the next page.
+		if (current_page_index < getNewPageIndex()) {
+			file.GetPage(&page, current_page_index); //load the next page.
 			return page.GetFirst(&fetchme); // return the first record.
 		} else {
 			return 0; // no next record, end of the file EOF.
 		}
-
 	}
 	return 1; //Success
 }
@@ -132,13 +124,21 @@ int DBFile::GetNext(Record &fetchme) {
 int DBFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
 	ComparisonEngine comparor;
 
-	//Loop over the method above to get the next record and check until it is accepted by the
-	//given selection predicate. Return first such record.
+	// Loop over the method above to get the next record and check until it is accepted by the
+	// given selection predicate. Return first such record.
 
 	while (GetNext(fetchme) == 1) {
 		if (comparor.Compare(&fetchme, &literal, &cnf) == 1) {
-			return 1;//Success
+			return 1;  // Success
 		}
 	}
-	return 0;	//Failure
+	return 0;  // Failure
+}
+
+int DBFile::getLastPageIndex() {
+	return file.GetLength() - 2;
+}
+
+int DBFile::getNewPageIndex() {
+	return file.GetLength() - 1;
 }
