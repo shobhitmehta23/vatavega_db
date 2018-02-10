@@ -24,7 +24,7 @@ void DBFile::Load(Schema &f_schema, const char *loadpath) {
 
 	//exit if file cannot be opened
 	if (inputFile == 0) {
-		cerr << "could not open test file  " << loadpath << "\n";
+		cerr << "could not open text file  " << loadpath << "\n";
 		exit(1);
 	}
 
