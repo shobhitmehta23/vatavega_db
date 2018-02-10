@@ -18,6 +18,11 @@ private:
 	File file;
 	Page page;
 	off_t current_page_index;
+
+	// utility methods to help with indexes
+	int getLastPageIndex();
+	int getNewPageIndex();
+
 public:
 	DBFile (); 
 
@@ -31,10 +36,5 @@ public:
 	void Add (Record &addme);
 	int GetNext (Record &fetchme);
 	int GetNext (Record &fetchme, CNF &cnf, Record &literal);
-
-	// utility methods to help with indexes
-	int getLastPageIndex();
-	int getNewPageIndex();
-
 };
 #endif
