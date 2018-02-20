@@ -77,6 +77,9 @@ public:
 	// closes the file and returns the file length (in number of pages)
 	int Close ();
 
+	//returns the index of at which a new page should be appended
+	int get_new_page_index();
+
 };
 
 

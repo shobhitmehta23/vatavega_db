@@ -269,6 +269,14 @@ off_t File :: GetLength () {
 }
 
 
+int File :: get_new_page_index() {
+	if (curLength == 0) {
+		return 0;
+	}
+	return curLength - 1;
+}
+
+
 int File :: Close () {
 
 	// write out the current length in pages
