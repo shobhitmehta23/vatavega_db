@@ -42,6 +42,9 @@ public:
 	// empty it out
 	void EmptyItOut ();
 
+	//check if the page contains no records
+	bool isEmpty();
+
 };
 
 
