@@ -73,13 +73,11 @@ void BigQ :: handle_vectorized_records_of_run(vector<Record>& record_list) {
 		if (!temp_page.Append(&(*record_list_iterator))) {
 			file.AddPage(&temp_page, file.get_new_page_index());
 			temp_page.EmptyItOut();
+			temp_page.Append(&(*record_list_iterator));
 		}
-		temp_page.Append(&(*record_list_iterator));
 	}
 
-	if (!temp_page.isEmpty()) {
-		file.AddPage(&temp_page, file.get_new_page_index());
-	}
+	file.AddPage(&temp_page, file.get_new_page_index());
 
 	record_list.clear();
 }
