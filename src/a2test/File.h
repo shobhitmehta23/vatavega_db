@@ -81,7 +81,10 @@ public:
 	int Close ();
 
 	//returns the index of at which a new page should be appended
-	int get_new_page_index();
+	off_t get_new_page_index();
+
+	//returns the index of last page
+	off_t getLastPageIndex();
 
 };
 

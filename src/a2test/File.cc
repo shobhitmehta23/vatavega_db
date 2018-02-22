@@ -273,11 +273,15 @@ off_t File :: GetLength () {
 }
 
 
-int File :: get_new_page_index() {
+off_t File :: get_new_page_index() {
 	if (curLength == 0) {
 		return 0;
 	}
 	return curLength - 1;
+}
+
+off_t File :: getLastPageIndex() {
+	return curLength - 2;
 }
 
 
