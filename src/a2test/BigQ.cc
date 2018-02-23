@@ -4,6 +4,30 @@
 
 using namespace std;
 
+BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
+
+	this->in = &in;
+	this->out = &out;
+	this->sortorder = &sortorder;
+	this->runlen = runlen;
+	this->filename = "test";
+	this->runCount = 0;
+
+	pthread_t thread;
+
+	pthread_create(&thread, NULL, &sort_externally, (void *) NULL);
+
+	pthread_exit(NULL);
+}
+
+BigQ::~BigQ() {
+}
+
+void *BigQ::sort_externally(void *arg) {
+	generate_runs();
+	merge_runs();
+}
+
 void BigQ::generate_runs() {
 
 	int space_in_run_for_records = calculate_space_in_run_for_records();
@@ -25,27 +49,6 @@ void BigQ::generate_runs() {
 	}
 
 	handle_vectorized_records_of_run(record_list);
-}
-
-BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
-
-	this->in = &in;
-	this->out = &out;
-	this->sortorder = &sortorder;
-	this->runlen = runlen;
-	this->filename = "test";
-	this->runCount = 0;
-
-	pthread_t sort;
-
-	// construct priority queue over sorted runs and dump sorted data
-	// into the out pipe
-
-	// finally shut down the out pipe
-	out.ShutDown();
-}
-
-BigQ::~BigQ() {
 }
 
 int BigQ::calculate_space_in_run_for_records() {
@@ -92,10 +95,9 @@ void BigQ::handle_vectorized_records_of_run(vector<Record>& record_list) {
 	record_list.clear();
 }
 
-void BigQ::merge_runs(Pipe &in, Pipe &out, OrderMaker &sortorder,
-		char* fileName, int numberOfRuns) {
+void BigQ::merge_runs() {
 	File tempFile;
-	tempFile.Open(1, fileName);
+	tempFile.Open(1, filename);
 
 	//Create an array to hold starting page for each run.
 
@@ -103,18 +105,17 @@ void BigQ::merge_runs(Pipe &in, Pipe &out, OrderMaker &sortorder,
 	priority_queue<RecordWrapper *, vector<RecordWrapper *>,
 			record_wrapper_sort_functor> priority_Q(sortorder);
 
-	int last_run_length = tempFile.GetLength() - (runlen * (numberOfRuns - 1))
-			- 1; //last -1 as each file has first (0th) page for special purpose.
+	int last_run_length = tempFile.GetLength() - (runlen * (runCount - 1)) - 1; //last -1 as each file has first (0th) page for special purpose.
 
-	int lastRunIndex = numberOfRuns - 1;
+	int lastRunIndex = runCount - 1;
 
-	Page run_current_page[numberOfRuns];
+	Page run_current_page[runCount];
 
-	int run_current_page_index[numberOfRuns];
+	int run_current_page_index[runCount];
 
 	//initialize the current pages and their current indexes for all the runs.
 	//Also, initialize the PQ along with it.
-	for (int i = 0; i < numberOfRuns; i++) {
+	for (int i = 0; i < runCount; i++) {
 		run_current_page_index[i] = i * runlen;
 		tempFile.GetPage(&run_current_page[i], run_current_page_index[i]);
 
@@ -138,7 +139,7 @@ void BigQ::merge_runs(Pipe &in, Pipe &out, OrderMaker &sortorder,
 		priority_Q.pop();
 
 		//output the head of queue to out pipe.
-		out.Insert(&head_record_wrapper->record);
+		out->Insert(&head_record_wrapper->record);
 
 		//Create a wrapper for new record for corresponding run to be inserted in PQ.
 		RecordWrapper* tail_record_wrapper = new RecordWrapper;
@@ -167,6 +168,6 @@ void BigQ::merge_runs(Pipe &in, Pipe &out, OrderMaker &sortorder,
 	}
 
 	tempFile.Close();
-	out.ShutDown();
+	out->ShutDown();
 }
 

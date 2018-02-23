@@ -69,8 +69,8 @@ private:
 			const Record& record);
 	void handle_newly_read_record(Record record, int *space_in_run,
 			vector<Record>& record_list);
-	void merge_runs(Pipe &in, Pipe &out, OrderMaker &sortorder, char* fileName,
-			int numberOfRuns);
+	void merge_runs();
+	void *sort_externally(void *arg);
 };
 
 #endif
