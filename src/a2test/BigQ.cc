@@ -189,7 +189,7 @@ void merge_runs(thread_arguments *args) {
 			run_current_page_index[runIndex]++;
 
 			//No need to process if the run is over.
-			if (!(run_current_page_index[runIndex] >= tempFile.GetLength()
+			if (!(run_current_page_index[runIndex] >= tempFile.get_new_page_index()
 					|| run_current_page_index[runIndex]
 							>= ((runIndex + 1) * args->runlen))) {
 				tempFile.GetPage(&run_current_page[runIndex],
