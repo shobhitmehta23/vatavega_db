@@ -54,6 +54,7 @@ void *sort_externally(void *thread_args) {
 	args = (thread_arguments *) thread_args;
 	generate_runs(args);
 	merge_runs(args);
+	delete args -> run_end_page_idx;
 }
 
 void generate_runs(thread_arguments *args) {
@@ -134,6 +135,10 @@ void handle_vectorized_records_of_run(vector<Record*>& record_list,
 	//int cumulitiveCount =
 		//	args->runCount > 1 ? args->run_end_page_idx[args->runCount - 2] : 0;
 	args->run_end_page_idx[args->runCount - 1] = file->get_new_page_index();// pageCount + cumulitiveCount;
+
+	for (Record * record : record_list) {
+		delete record;
+	}
 	record_list.clear();
 }
 
@@ -183,6 +188,7 @@ void merge_runs(thread_arguments *args) {
 		RecordWrapper* tail_record_wrapper = new RecordWrapper;
 		int runIndex = head_record_wrapper->runIndex;
 		tail_record_wrapper->runIndex = runIndex;
+		delete head_record_wrapper;
 
 		//If page end is reached, go to the next page.
 		if (run_current_page[runIndex].GetFirst(&tail_record_wrapper->record)) {
@@ -200,6 +206,8 @@ void merge_runs(thread_arguments *args) {
 				run_current_page[runIndex].GetFirst(
 						&tail_record_wrapper->record);
 				priority_Q.push(tail_record_wrapper);
+			} else {
+				delete tail_record_wrapper;
 			}
 
 		}
