@@ -8,6 +8,7 @@
 *.so
 *.out
 *.bin
+*.tbl
 
 # OS generated files #
 ######################
