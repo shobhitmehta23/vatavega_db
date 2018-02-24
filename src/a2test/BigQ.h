@@ -22,6 +22,7 @@ typedef struct thread_arguments {
 	int runlen;
 	char *filename;
 	int runCount;
+	int *run_end_page_idx;
 } thread_arguments;
 
 typedef struct record_sort_functor {

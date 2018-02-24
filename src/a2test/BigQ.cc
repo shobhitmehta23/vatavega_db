@@ -37,6 +37,7 @@ BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
 	args.runlen = runlen;
 	args.filename = "test";
 	args.runCount = 0;
+	args.run_end_page_idx = new int[runlen];
 
 	pthread_t thread;
 
@@ -59,6 +60,8 @@ void generate_runs(thread_arguments *args) {
 
 	File file;
 	file.Open(0, args->filename);
+
+	int runIndex = -1;
 
 	int space_in_run_for_records = calculate_space_in_run_for_records(
 			args->runlen);
@@ -107,12 +110,12 @@ void handle_newly_read_record(Record* record, int *space_in_run,
 
 void handle_vectorized_records_of_run(vector<Record*>& record_list,
 		thread_arguments *args, File *file) {
-
 	args->runCount++; //increment run count
 	sort(record_list.begin(), record_list.end(),
 			record_sort_functor(args->sortorder));
 
 	vector<Page> pages;
+	int pageCount = 0;
 	vector<Record*>::iterator record_list_iterator;
 	Page temp_page;
 
@@ -120,13 +123,17 @@ void handle_vectorized_records_of_run(vector<Record*>& record_list,
 			record_list_iterator != record_list.end(); record_list_iterator++) {
 		if (!temp_page.Append(*record_list_iterator)) {
 			file->AddPage(&temp_page, file->get_new_page_index());
+			pageCount++;
 			temp_page.EmptyItOut();
 			temp_page.Append(*record_list_iterator);
 		}
 	}
 
 	file->AddPage(&temp_page, file->get_new_page_index());
-
+	pageCount++;
+	//int cumulitiveCount =
+		//	args->runCount > 1 ? args->run_end_page_idx[args->runCount - 2] : 0;
+	args->run_end_page_idx[args->runCount - 1] = file->get_new_page_index();// pageCount + cumulitiveCount;
 	record_list.clear();
 }
 
@@ -140,11 +147,6 @@ void merge_runs(thread_arguments *args) {
 	priority_queue<RecordWrapper *, vector<RecordWrapper *>,
 			record_wrapper_sort_functor> priority_Q(args->sortorder);
 
-	int last_run_length = tempFile.GetLength()
-			- (args->runlen * (args->runCount - 1)); // - 1; //last -1 as each file has first (0th) page for special purpose.
-
-	int lastRunIndex = args->runCount - 1;
-
 	Page run_current_page[args->runCount];
 
 	int run_current_page_index[args->runCount];
@@ -152,7 +154,7 @@ void merge_runs(thread_arguments *args) {
 	//initialize the current pages and their current indexes for all the runs.
 	//Also, initialize the PQ along with it.
 	for (int i = 0; i < args->runCount; i++) {
-		run_current_page_index[i] = i * args->runlen;
+		run_current_page_index[i] = i == 0 ? 0 : args->run_end_page_idx[i - 1];
 		tempFile.GetPage(&run_current_page[i], run_current_page_index[i]);
 
 		RecordWrapper* rw = new RecordWrapper();
@@ -189,9 +191,10 @@ void merge_runs(thread_arguments *args) {
 			run_current_page_index[runIndex]++;
 
 			//No need to process if the run is over.
-			if (!(run_current_page_index[runIndex] >= tempFile.get_new_page_index()
+			if (!(run_current_page_index[runIndex]
+					>= tempFile.get_new_page_index()
 					|| run_current_page_index[runIndex]
-							>= ((runIndex + 1) * args->runlen))) {
+							>= args->run_end_page_idx[runIndex])) {
 				tempFile.GetPage(&run_current_page[runIndex],
 						run_current_page_index[runIndex]);
 				run_current_page[runIndex].GetFirst(
