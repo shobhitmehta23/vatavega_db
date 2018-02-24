@@ -1,7 +1,7 @@
 #include "BigQ.h"
 
-#include <sys/_pthread/_pthread_t.h>
-#include <sys/_types/_null.h>
+//#include <sys/_pthread/_pthread_t.h>
+//#include <sys/_types/_null.h>
 #include <algorithm>
 #include <iterator>
 #include <queue>
@@ -51,7 +51,7 @@ BigQ::~BigQ() {
 void *sort_externally(void *thread_args) {
 	struct thread_arguments *args;
 	args = (struct thread_arguments *) thread_args;
-	//generate_runs(args);
+	generate_runs(args);
 	merge_runs(args);
 }
 
