@@ -115,7 +115,7 @@ void handle_vectorized_records_of_run(vector<Record*>& record_list,
 			record_sort_functor(args->sortorder));
 
 	vector<Page> pages;
-	int pageCount = 0;
+	//int pageCount = 0;
 	vector<Record*>::iterator record_list_iterator;
 	Page temp_page;
 
@@ -123,14 +123,14 @@ void handle_vectorized_records_of_run(vector<Record*>& record_list,
 			record_list_iterator != record_list.end(); record_list_iterator++) {
 		if (!temp_page.Append(*record_list_iterator)) {
 			file->AddPage(&temp_page, file->get_new_page_index());
-			pageCount++;
+			//pageCount++;
 			temp_page.EmptyItOut();
 			temp_page.Append(*record_list_iterator);
 		}
 	}
 
 	file->AddPage(&temp_page, file->get_new_page_index());
-	pageCount++;
+	//pageCount++;
 	//int cumulitiveCount =
 		//	args->runCount > 1 ? args->run_end_page_idx[args->runCount - 2] : 0;
 	args->run_end_page_idx[args->runCount - 1] = file->get_new_page_index();// pageCount + cumulitiveCount;

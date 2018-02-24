@@ -52,7 +52,7 @@ public:
 	}
 	bool operator()(RecordWrapper *rw1, RecordWrapper *rw2) {
 		return comparison_engine.Compare(&(rw1->record), &(rw2->record),
-				ordermaker) < 0;
+				ordermaker) >= 0;
 	}
 } record_wrapper_sort_functor;
 
