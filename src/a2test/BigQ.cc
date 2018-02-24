@@ -17,7 +17,7 @@ bool check_if_space_exists_in_run_for_record(int space_in_run,
 void handle_newly_read_record(Record* record, int *space_in_run,
 		vector<Record*>& record_list);
 void handle_vectorized_records_of_run(vector<Record*>& record_list,
-		thread_arguments *args);
+		thread_arguments *args, File file);
 void generate_runs(thread_arguments *args);
 void merge_runs(thread_arguments *args);
 void *sort_externally(void *thread_args);
@@ -57,6 +57,9 @@ void *sort_externally(void *thread_args) {
 
 void generate_runs(thread_arguments *args) {
 
+	File file;
+	file.Open(0, args->filename);
+
 	int space_in_run_for_records = calculate_space_in_run_for_records(
 			args->runlen);
 
@@ -71,7 +74,7 @@ void generate_runs(thread_arguments *args) {
 			handle_newly_read_record(temp_record_ptr, &space_in_run_for_records,
 					record_list);
 		} else {
-			handle_vectorized_records_of_run(record_list, args);
+			handle_vectorized_records_of_run(record_list, args, file);
 			space_in_run_for_records = calculate_space_in_run_for_records(
 					args->runlen);
 			handle_newly_read_record(temp_record_ptr, &space_in_run_for_records,
@@ -79,7 +82,7 @@ void generate_runs(thread_arguments *args) {
 		}
 	}
 
-	handle_vectorized_records_of_run(record_list, args);
+	handle_vectorized_records_of_run(record_list, args, file);
 }
 
 int calculate_space_in_run_for_records(int runlen) {
@@ -101,7 +104,7 @@ void handle_newly_read_record(Record* record, int *space_in_run,
 }
 
 void handle_vectorized_records_of_run(vector<Record*>& record_list,
-		thread_arguments *args) {
+		thread_arguments *args, File file) {
 
 	args->runCount++; //increment run count
 	sort(record_list.begin(), record_list.end(),
@@ -110,8 +113,6 @@ void handle_vectorized_records_of_run(vector<Record*>& record_list,
 	vector<Page> pages;
 	vector<Record*>::iterator record_list_iterator;
 	Page temp_page;
-	File file;
-	file.Open(0, args->filename);
 
 	for (record_list_iterator = record_list.begin();
 			record_list_iterator != record_list.end(); record_list_iterator++) {
@@ -138,7 +139,7 @@ void merge_runs(thread_arguments *args) {
 			record_wrapper_sort_functor> priority_Q(args->sortorder);
 
 	int last_run_length = tempFile.GetLength()
-			- (args->runlen * (args->runCount - 1)) - 1; //last -1 as each file has first (0th) page for special purpose.
+			- (args->runlen * (args->runCount - 1)); // - 1; //last -1 as each file has first (0th) page for special purpose.
 
 	int lastRunIndex = args->runCount - 1;
 
