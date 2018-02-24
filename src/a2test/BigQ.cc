@@ -13,13 +13,13 @@ using namespace std;
 
 int calculate_space_in_run_for_records(int runlen);
 bool check_if_space_exists_in_run_for_record(int space_in_run,
-		Record const& record);
-void handle_newly_read_record(Record record, int *space_in_run,
-		vector<Record>& record_list);
-void handle_vectorized_records_of_run(vector<Record>& record_list,
-		struct thread_arguments *args);
-void generate_runs(struct thread_arguments *args);
-void merge_runs(struct thread_arguments *args);
+		Record* const & record);
+void handle_newly_read_record(Record* record, int *space_in_run,
+		vector<Record*>& record_list);
+void handle_vectorized_records_of_run(vector<Record*>& record_list,
+		thread_arguments *args);
+void generate_runs(thread_arguments *args);
+void merge_runs(thread_arguments *args);
 void *sort_externally(void *thread_args);
 
 BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
@@ -30,17 +30,17 @@ BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
 //	this->runlen = runlen;
 //	this->filename = "test";
 //	this->runCount = 0;
-	thread_arguments *args;
-	args->in = &in;
-	args->out = &out;
-	args->sortorder = &sortorder;
-	args->runlen = runlen;
-	args->filename = "test";
-	args->runCount = 0;
+	thread_arguments args;
+	args.in = &in;
+	args.out = &out;
+	args.sortorder = &sortorder;
+	args.runlen = runlen;
+	args.filename = "test";
+	args.runCount = 0;
 
 	pthread_t thread;
 
-	pthread_create(&thread, NULL, sort_externally, (void *) args);
+	pthread_create(&thread, NULL, sort_externally, (void *) &args);
 
 	pthread_exit(NULL);
 }
@@ -49,30 +49,32 @@ BigQ::~BigQ() {
 }
 
 void *sort_externally(void *thread_args) {
-	struct thread_arguments *args;
-	args = (struct thread_arguments *) thread_args;
+	thread_arguments *args;
+	args = (thread_arguments *) thread_args;
 	generate_runs(args);
 	merge_runs(args);
 }
 
-void generate_runs(struct thread_arguments *args) {
+void generate_runs(thread_arguments *args) {
 
 	int space_in_run_for_records = calculate_space_in_run_for_records(
 			args->runlen);
 
 	Record temp_record;
-	vector<Record> record_list;
+	vector<Record*> record_list;
 
 	while (args->in->Remove(&temp_record)) {
+		Record *temp_record_ptr = new Record;
+		temp_record_ptr->Copy(&temp_record);
 		if (check_if_space_exists_in_run_for_record(space_in_run_for_records,
-				temp_record)) {
-			handle_newly_read_record(temp_record, &space_in_run_for_records,
+				temp_record_ptr)) {
+			handle_newly_read_record(temp_record_ptr, &space_in_run_for_records,
 					record_list);
 		} else {
 			handle_vectorized_records_of_run(record_list, args);
 			space_in_run_for_records = calculate_space_in_run_for_records(
 					args->runlen);
-			handle_newly_read_record(temp_record, &space_in_run_for_records,
+			handle_newly_read_record(temp_record_ptr, &space_in_run_for_records,
 					record_list);
 		}
 	}
@@ -87,36 +89,36 @@ int calculate_space_in_run_for_records(int runlen) {
 }
 
 bool check_if_space_exists_in_run_for_record(int space_in_run,
-		Record const& record) {
-	int record_size = record.get_record_size();
+		Record* const & record) {
+	int record_size = record->get_record_size();
 	return (space_in_run - record_size) >= 0;
 }
 
-void handle_newly_read_record(Record record, int *space_in_run,
-		vector<Record>& record_list) {
+void handle_newly_read_record(Record* record, int *space_in_run,
+		vector<Record*>& record_list) {
 	record_list.push_back(record);
-	*space_in_run = *space_in_run - record.get_record_size();
+	*space_in_run = *space_in_run - record->get_record_size();
 }
 
-void handle_vectorized_records_of_run(vector<Record>& record_list,
-		struct thread_arguments *args) {
+void handle_vectorized_records_of_run(vector<Record*>& record_list,
+		thread_arguments *args) {
 
 	args->runCount++; //increment run count
 	sort(record_list.begin(), record_list.end(),
 			record_sort_functor(args->sortorder));
 
 	vector<Page> pages;
-	vector<Record>::iterator record_list_iterator;
+	vector<Record*>::iterator record_list_iterator;
 	Page temp_page;
 	File file;
 	file.Open(0, args->filename);
 
 	for (record_list_iterator = record_list.begin();
 			record_list_iterator != record_list.end(); record_list_iterator++) {
-		if (!temp_page.Append(&(*record_list_iterator))) {
+		if (!temp_page.Append(*record_list_iterator)) {
 			file.AddPage(&temp_page, file.get_new_page_index());
 			temp_page.EmptyItOut();
-			temp_page.Append(&(*record_list_iterator));
+			temp_page.Append(*record_list_iterator);
 		}
 	}
 
@@ -125,7 +127,7 @@ void handle_vectorized_records_of_run(vector<Record>& record_list,
 	record_list.clear();
 }
 
-void merge_runs(struct thread_arguments *args) {
+void merge_runs(thread_arguments *args) {
 	File tempFile;
 	tempFile.Open(1, args->filename);
 

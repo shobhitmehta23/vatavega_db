@@ -35,8 +35,8 @@ public:
 		ordermaker = order_maker;
 	}
 
-	bool operator()(Record& record_one, Record& record_two) {
-		return comparison_engine.Compare(&record_one, &record_two, ordermaker)
+	bool operator()(Record* record_one, Record* record_two) {
+		return comparison_engine.Compare(record_one, record_two, ordermaker)
 				< 0;
 	}
 
