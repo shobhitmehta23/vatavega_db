@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <iterator>
 #include <queue>
+#include <cstdlib>
 #include "Comparison.h"
 #include "Defs.h"
 
@@ -25,7 +26,8 @@ BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
 	args->out = &out;
 	args->sortorder = &sortorder;
 	args->runlen = runlen;
-	args->filename = "test";
+	args->filename = "meta_data";
+	args->filename += (rand()%100);
 	args->runCount = 0;
 	pthread_t thread;
 
@@ -42,8 +44,8 @@ void *sort_externally(void *thread_args) {
 	args = (thread_arguments *) thread_args;
 	generate_runs(args);
 	merge_runs(args);
-
-	delete thread_args;
+	remove(args->filename);
+	delete args;
 }
 
 void generate_runs(thread_arguments *args) {
