@@ -1,11 +1,7 @@
 #include "BigQ.h"
-
-//#include <sys/_pthread/_pthread_t.h>
-//#include <sys/_types/_null.h>
 #include <algorithm>
 #include <iterator>
 #include <queue>
-
 #include "Comparison.h"
 #include "Defs.h"
 
@@ -24,24 +20,16 @@ void *sort_externally(void *thread_args);
 
 BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
 
-	//this->in = &in;
-//	this->out = &out;
-//	this->sortorder = &sortorder;
-//	this->runlen = runlen;
-//	this->filename = "test";
-//	this->runCount = 0;
-	thread_arguments args;
-	args.in = &in;
-	args.out = &out;
-	args.sortorder = &sortorder;
-	args.runlen = runlen;
-	args.filename = "test";
-	args.runCount = 0;
-	args.run_end_page_idx = new int[runlen];
-
+	thread_arguments *args = new thread_arguments;
+	args->in = &in;
+	args->out = &out;
+	args->sortorder = &sortorder;
+	args->runlen = runlen;
+	args->filename = "test";
+	args->runCount = 0;
 	pthread_t thread;
 
-	pthread_create(&thread, NULL, sort_externally, (void *) &args);
+	pthread_create(&thread, NULL, sort_externally, (void *) args);
 
 	pthread_exit(NULL);
 }
@@ -53,8 +41,8 @@ void *sort_externally(void *thread_args) {
 	thread_arguments *args;
 	args = (thread_arguments *) thread_args;
 	generate_runs(args);
+	cout << "Run generation done" << endl;
 	merge_runs(args);
-	delete args -> run_end_page_idx;
 }
 
 void generate_runs(thread_arguments *args) {
@@ -116,7 +104,6 @@ void handle_vectorized_records_of_run(vector<Record*>& record_list,
 			record_sort_functor(args->sortorder));
 
 	vector<Page> pages;
-	//int pageCount = 0;
 	vector<Record*>::iterator record_list_iterator;
 	Page temp_page;
 
@@ -131,14 +118,11 @@ void handle_vectorized_records_of_run(vector<Record*>& record_list,
 	}
 
 	file->AddPage(&temp_page, file->get_new_page_index());
-	//pageCount++;
-	//int cumulitiveCount =
-		//	args->runCount > 1 ? args->run_end_page_idx[args->runCount - 2] : 0;
-	args->run_end_page_idx[args->runCount - 1] = file->get_new_page_index();// pageCount + cumulitiveCount;
+	args->run_end_page_idx.push_back(file->get_new_page_index()); // pageCount + cumulitiveCount;
 
-	for (Record * record : record_list) {
-		delete record;
-	}
+	/*for (Record * record : record_list) {
+	 delete record;
+	 }*/
 	record_list.clear();
 }
 
@@ -168,8 +152,8 @@ void merge_runs(thread_arguments *args) {
 		priority_Q.push(rw);
 	}
 
-	/*Remove the head, add to out pipe, and push next record from corresponding run to the tail of priority
-	 queue and repeat until all the runs are merged  i.e. PQ is empty.*/
+	//Remove the head, add to out pipe, and push next record from corresponding run to the tail of priority
+	//queue and repeat until all the runs are merged  i.e. PQ is empty.
 	while (true) {
 		if (priority_Q.empty()) {
 			break;
@@ -188,7 +172,7 @@ void merge_runs(thread_arguments *args) {
 		RecordWrapper* tail_record_wrapper = new RecordWrapper;
 		int runIndex = head_record_wrapper->runIndex;
 		tail_record_wrapper->runIndex = runIndex;
-		delete head_record_wrapper;
+		//delete head_record_wrapper;
 
 		//If page end is reached, go to the next page.
 		if (run_current_page[runIndex].GetFirst(&tail_record_wrapper->record)) {
@@ -217,4 +201,3 @@ void merge_runs(thread_arguments *args) {
 	tempFile.Close();
 	args->out->ShutDown();
 }
-

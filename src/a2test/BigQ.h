@@ -22,7 +22,7 @@ typedef struct thread_arguments {
 	int runlen;
 	char *filename;
 	int runCount;
-	int *run_end_page_idx;
+	vector<int> run_end_page_idx;
 } thread_arguments;
 
 typedef struct record_sort_functor {
@@ -37,8 +37,7 @@ public:
 	}
 
 	bool operator()(Record* record_one, Record* record_two) {
-		return comparison_engine.Compare(record_one, record_two, ordermaker)
-				< 0;
+		return comparison_engine.Compare(record_one, record_two, ordermaker) < 0;
 	}
 
 } record_sort_functor;
@@ -62,19 +61,6 @@ public:
 
 	BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen);
 	~BigQ();
-
-//private:
-
-	/*void generate_runs();
-	 void handle_vectorized_records_of_run(vector<Record>& record_list);
-	 int calculate_space_in_run_for_records();
-	 bool check_if_space_exists_in_run_for_record(int space_in_run,
-	 const Record& record);
-	 void handle_newly_read_record(Record record, int *space_in_run,
-	 vector<Record>& record_list);
-	 void merge_runs();
-	 void *sort_externally(void *arg);*/
-
 
 };
 
