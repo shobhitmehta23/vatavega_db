@@ -41,8 +41,9 @@ void *sort_externally(void *thread_args) {
 	thread_arguments *args;
 	args = (thread_arguments *) thread_args;
 	generate_runs(args);
-	cout << "Run generation done" << endl;
 	merge_runs(args);
+
+	delete thread_args;
 }
 
 void generate_runs(thread_arguments *args) {
@@ -111,7 +112,6 @@ void handle_vectorized_records_of_run(vector<Record*>& record_list,
 			record_list_iterator != record_list.end(); record_list_iterator++) {
 		if (!temp_page.Append(*record_list_iterator)) {
 			file->AddPage(&temp_page, file->get_new_page_index());
-			//pageCount++;
 			temp_page.EmptyItOut();
 			temp_page.Append(*record_list_iterator);
 		}
@@ -120,9 +120,6 @@ void handle_vectorized_records_of_run(vector<Record*>& record_list,
 	file->AddPage(&temp_page, file->get_new_page_index());
 	args->run_end_page_idx.push_back(file->get_new_page_index()); // pageCount + cumulitiveCount;
 
-	/*for (Record * record : record_list) {
-	 delete record;
-	 }*/
 	record_list.clear();
 }
 
