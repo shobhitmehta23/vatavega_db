@@ -26,14 +26,14 @@ BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
 	args->out = &out;
 	args->sortorder = &sortorder;
 	args->runlen = runlen;
-	args->filename = "meta_data";
-	args->filename += (rand()%100);
+	args->filename= (char*)malloc(20 * sizeof(char));
+	sprintf(args->filename, "meta_data_%d", rand()%1000);
 	args->runCount = 0;
 	pthread_t thread;
 
 	pthread_create(&thread, NULL, sort_externally, (void *) args);
 
-	pthread_exit(NULL);
+	//pthread_exit(NULL);
 }
 
 BigQ::~BigQ() {
