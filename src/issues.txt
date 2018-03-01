@@ -1,0 +1,13 @@
+Assignment 1 - 
+Add method is untested.
+Should be changed to buffered writes.
+Unit testing missing.
+
+Assignment 2a - 
+Memory leaks everywhere - 
+Records getting added to vector, vector eventually gets written to file. At this point Record object can be ideally deleted.
+Memory allocated for filename using for malloc not freed. Can be safely done at the end.
+For record wrapper you are just returning the pointer to out. You can safely free the record wrapper without deleting the object being pointed to by the pointer.
+
+Remove(args->filename) does not seem to be working.
+Unit testing missing.
