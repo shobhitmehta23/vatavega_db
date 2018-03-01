@@ -1,6 +1,7 @@
 Assignment 1 - 
 Add method is untested.
 Should be changed to buffered writes.
+refactoring to use file.cc methods for indexing.
 Unit testing missing.
 
 Assignment 2a - 
