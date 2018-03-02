@@ -9,19 +9,12 @@
 #include "ComparisonEngine.h"
 #include "File.h"
 #include "cstdlib"
-
-typedef enum {heap, sorted, tree} fType;
+#include "DBFileBase.h"
 
 
 class DBFile {
 private:
-	File file;
-	Page page;
-	off_t current_page_index;
-
-	// utility methods to help with indexes
-	int getLastPageIndex();
-	int getNewPageIndex();
+	DBFileBase *dbfile;
 
 public:
 	DBFile (); 

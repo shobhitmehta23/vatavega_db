@@ -69,6 +69,31 @@ OrderMaker :: OrderMaker() {
 	numAtts = 0;
 }
 
+void OrderMaker::serialize_to_ofstream(std::ofstream& ofs) {
+	ofs << numAtts << endl;
+
+	for (int i = 0; i < numAtts; i++) {
+		ofs << whichAtts[i] << endl;
+		ofs << whichTypes[i] << endl;
+	}
+}
+
+void OrderMaker::deserialize_from_isstream(std::ifstream& ifs) {
+	ifs >> numAtts;
+
+	for (int i = 0; i< numAtts; i++) {
+		ifs >> whichAtts[i];
+
+		// >> is not overloaded for enum.
+		// But in file, it is written as integers.
+		// interpret as integer and typecast to enum
+		// to avoid overloading.
+		int type_number;
+		ifs >> type_number;
+		whichTypes[i] = (Type) type_number;
+	}
+}
+
 OrderMaker :: OrderMaker(Schema *schema) {
 	numAtts = 0;
 

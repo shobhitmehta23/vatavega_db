@@ -6,6 +6,8 @@
 #include "File.h"
 #include "Comparison.h"
 #include "ComparisonEngine.h"
+#include <iostream>
+#include <fstream>
 
 
 // This stores an individual comparison that is part of a CNF
@@ -59,6 +61,9 @@ public:
 
 	// print to the screen
 	void Print ();
+
+	void serialize_to_ofstream(std::ofstream& ofs);
+	void deserialize_from_isstream(std::ifstream& ifs);
 };
 
 class Record;
