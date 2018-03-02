@@ -37,7 +37,9 @@ void DBFile::Load(Schema &f_schema, const char *loadpath) {
 
 int DBFile::Open(const char *f_path) {
 
-	string meta_file = f_path + ".metadata";
+	string meta_file(f_path);
+	meta_file.append(string(".meta"));
+	cout << meta_file;
 	ifstream meta_data_file;
 	meta_data_file.open(meta_file.c_str());
 

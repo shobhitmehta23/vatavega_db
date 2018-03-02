@@ -3,8 +3,9 @@
 
 #include "DBFileBase.h"
 
-class HeapFile: DBFileBase {
+class HeapFile: public DBFileBase {
 
+public:
 	HeapFile();
 	~HeapFile() {
 	}

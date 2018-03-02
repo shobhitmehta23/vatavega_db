@@ -14,8 +14,6 @@
 #define WRITE_MODE 1
 #define READ_MODE 0
 
-typedef enum {heap, sorted, tree} fType;
-
 typedef struct {
 	OrderMaker * order_maker;
 	int runlen;
