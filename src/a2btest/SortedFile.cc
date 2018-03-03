@@ -1,18 +1,19 @@
 #include "SortedFile.h"
+#include "BigQ.h"
 
 void AddRecordToFile(Record rec, File f);
 int GetNextRecordFromFile(Record &fetchme, Page p, File f, off_t page_index);
 
 SortedFile::SortedFile() {
-	input_pipe = new Pipe(PIPE_SIZE);
-	output_pipe = new Pipe(PIPE_SIZE);
 	mode = READ_MODE;
 	runlen = 0;
 	order_maker = NULL;
+	output_pipe = NULL;
+	input_pipe = NULL;
+	sorting_queue = NULL;
 }
 
 SortedFile::~SortedFile() {
-
 }
 
 int SortedFile::Create(const char *fpath, void *startup) {
@@ -34,6 +35,9 @@ int SortedFile::Create(const char *fpath, void *startup) {
 	meta_data_file << sort_info->runlen << endl;
 
 	meta_data_file.close();
+
+	file.Open(0, (char*) fpath);
+	reinitialize_bigQ();
 
 	return 1;
 }
@@ -82,6 +86,8 @@ int SortedFile::Open(const char *fpath) {
 	cout << "Open a DbFile" << endl;
 	file.Open(1, (char*) fpath);
 	MoveFirst();
+
+	reinitialize_bigQ();
 
 	return 1;
 }
@@ -171,4 +177,50 @@ int GetNextRecordFromFile(Record &fetchme, Page p, File f, off_t &page_index) {
 		}
 	}
 	return 1; //Success
+}
+
+int SortedFile::Close() {
+	return 1;
+}
+
+void SortedFile::MoveFirst() {
+
+}
+
+int SortedFile::GetNext(Record &fetchme) {
+	if (mode == WRITE_MODE) {
+		twoWayMerge();
+		MoveFirst();
+		reinitialize_bigQ();
+		mode = READ_MODE;
+	}
+
+	if (page.GetFirst(&fetchme) == 0) {
+		current_page_index++; //increment the current page index page for the next page.
+
+		//check if next page exists.
+		if (current_page_index < file.get_new_page_index()) {
+			file.GetPage(&page, current_page_index); //load the next page.
+			return page.GetFirst(&fetchme); // return the first record.
+		} else {
+			return 0; // no next record, end of the file EOF.
+		}
+	}
+
+	return 1; //Success
+}
+
+int SortedFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
+	return 1;
+}
+
+void SortedFile::reinitialize_bigQ() {
+	delete sorting_queue;
+	delete input_pipe;
+	delete output_pipe;
+
+	input_pipe = new Pipe(PIPE_SIZE);
+	output_pipe = new Pipe(PIPE_SIZE);
+
+	sorting_queue = new BigQ(*input_pipe, *output_pipe, order_maker, runlen);
 }

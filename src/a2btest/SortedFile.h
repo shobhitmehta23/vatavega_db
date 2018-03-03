@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include "Pipe.h"
+#include "BigQ.h"
 
 using namespace std;
 
@@ -23,10 +24,12 @@ public:
 	void Add(Record &addme);
 	int GetNext(Record &fetchme);
 	int GetNext(Record &fetchme, CNF &cnf, Record &literal);
+	void reinitialize_bigQ();
 
 private:
 	Pipe * input_pipe;
 	Pipe * output_pipe;
+	BigQ * sorting_queue;
 	int runlen;
 	OrderMaker *order_maker;
 	int mode;
