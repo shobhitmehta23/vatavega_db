@@ -31,7 +31,7 @@ private:
 	OrderMaker *order_maker;
 	int mode;
 
-	void merge();
+	void twoWayMerg();
 };
 
 #endif /* A2BTEST_SORTEDFILE_H_ */

@@ -26,6 +26,7 @@ protected:
 	File file;
 	Page page;
 	off_t current_page_index;
+	char *fName;
 
 public:
 	DBFileBase ();
