@@ -9,14 +9,14 @@ endif
 
 all: clean test.out
 
-test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o y.tab.o lex.yy.o test.o
-	$(CC) -o test.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o y.tab.o lex.yy.o test.o -lfl -lpthread
+test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o HeapFile.o SortedFile.o DBFileBase.o y.tab.o lex.yy.o test.o
+	$(CC) -o test.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o HeapFile.o SortedFile.o DBFileBase.o y.tab.o lex.yy.o test.o -lfl -lpthread
 	
-a2test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o y.tab.o lex.yy.o a2-test.o
-	$(CC) -o a2test.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o y.tab.o lex.yy.o a2-test.o -lfl -lpthread
+a2test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o HeapFile.o SortedFile.o DBFileBase.o y.tab.o lex.yy.o a2-test.o
+	$(CC) -o a2test.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o HeapFile.o SortedFile.o DBFileBase.o y.tab.o lex.yy.o a2-test.o -lfl -lpthread
 	
-a1test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Pipe.o y.tab.o lex.yy.o a1-test.o
-	$(CC) -o a1test.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Pipe.o y.tab.o lex.yy.o a1-test.o -lfl
+a1test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Pipe.o HeapFile.o SortedFile.o DBFileBase.o y.tab.o lex.yy.o a1-test.o
+	$(CC) -o a1test.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Pipe.o HeapFile.o SortedFile.o DBFileBase.o y.tab.o lex.yy.o a1-test.o -lfl
 	
 test.o: test.cc
 	$(CC) -g -c test.cc
@@ -24,6 +24,15 @@ test.o: test.cc
 a1-test.o: a1-test.cc
 	$(CC) -g -c a1-test.cc
 
+HeapFile.o: HeapFile.cc
+	$(CC) -g -c HeapFile.cc
+
+SortedFile.o: SortedFile.cc
+	$(CC) -g -c SortedFile.cc
+	
+DBFileBase.o: DBFileBase.cc
+	$(CC) -g -c DBFileBase.cc
+	
 Comparison.o: Comparison.cc
 	$(CC) -g -c Comparison.cc
 	

@@ -7,6 +7,7 @@ SortedFile::SortedFile() {
 	input_pipe = new Pipe(PIPE_SIZE);
 	output_pipe = new Pipe(PIPE_SIZE);
 	mode = READ_MODE;
+	runlen = 0;
 	order_maker = NULL;
 }
 
@@ -17,6 +18,8 @@ SortedFile::~SortedFile() {
 int SortedFile::Create(const char *fpath, void *startup) {
 	fName = fpath;
 	string meta_file = fpath + ".metadata";
+	string meta_file(fpath);
+	meta_file.append(string(".meta"));
 	ofstream meta_data_file;
 	meta_data_file.open(meta_file.c_str());
 
@@ -64,7 +67,9 @@ int SortedFile::Open(const char *fpath) {
 	cout << "Open a DbFile" << endl;
 	mode = READ_MODE;
 
-	string meta_file = fpath + ".metadata";
+	string meta_file(fpath);
+	meta_file.append(string(".meta"));
+
 	ifstream meta_data_file;
 	meta_data_file.open(meta_file.c_str());
 
@@ -167,4 +172,3 @@ int GetNextRecordFromFile(Record &fetchme, Page p, File f, off_t &page_index) {
 	}
 	return 1; //Success
 }
-

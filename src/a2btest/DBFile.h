@@ -10,7 +10,7 @@
 #include "File.h"
 #include "cstdlib"
 #include "DBFileBase.h"
-
+#include "Defs.h"
 
 class DBFile {
 private:

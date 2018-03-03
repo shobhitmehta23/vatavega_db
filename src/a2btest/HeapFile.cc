@@ -14,7 +14,9 @@ HeapFile::HeapFile() {
 }
 
 int HeapFile::Create(const char *f_path, void *startup) {
-	string meta_file = f_path + ".metadata";
+
+	string meta_file(f_path);
+	meta_file.append(string(".meta"));
 	ofstream meta_data_file;
 	meta_data_file.open(meta_file.c_str());
 

@@ -27,7 +27,7 @@ public:
 private:
 	Pipe * input_pipe;
 	Pipe * output_pipe;
-	int runlen = 0;
+	int runlen;
 	OrderMaker *order_maker;
 	int mode;
 

@@ -10,6 +10,7 @@
 *.bin
 *.tbl
 *.tar.gz
+*.meta
 
 # OS generated files #
 ######################
