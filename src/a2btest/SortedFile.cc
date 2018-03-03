@@ -33,6 +33,7 @@ int SortedFile::Create(const char *fpath, void *startup) {
 
 	//Assign it to the local order_maker.
 	order_maker = sort_info->order_maker;
+	runlen = sort_info->runlen;
 
 	meta_data_file << sort_info->runlen << endl;
 
