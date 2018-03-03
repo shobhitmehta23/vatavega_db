@@ -56,7 +56,7 @@ void SortedFile::Add(Record &addme) {
 void SortedFile::Load(Schema &myschema, const char *loadpath) {
 
 	if (mode == READ_MODE) {
-			reinitialize_bigQ();
+		reinitialize_bigQ();
 	}
 	mode = WRITE_MODE;
 
@@ -127,7 +127,9 @@ void SortedFile::twoWayMerge() {
 
 	Record rec1;
 	Record rec2;
+	//int cnt=0;
 
+	//When file and pipe both are empty, just return, highly unlikely though.
 	if (srcFile.GetLength() == 0) {
 
 		if (!output_pipe->Remove(&rec1)) {
@@ -137,15 +139,21 @@ void SortedFile::twoWayMerge() {
 	}
 
 	if (srcFile.GetLength() == 0) {
+		//Here file is empty but pipe has contents.
 		AddRecordToFile(rec1, &file);
-
-		while (output_pipe->Remove(&rec1)) {
-			AddRecordToFile(rec1, &file);
-		}
+		appendOutPipeCOntents(&file, output_pipe);
+		/*while (output_pipe->Remove(&rec1)) {
+		 AddRecordToFile(rec1, &file,cnt);
+		 }*/
 	} else if (!output_pipe->Remove(&rec1)) {
-		GetNextRecordFromFile(rec2, &srcPage, &srcFile, src_page_index);
-		AddRecordToFile(rec2, &file);
+		//when pipe has no contents but file has
+		appendSourceFileContents(&file, &srcFile, &srcPage, src_page_index);
+
+		//GetNextRecordFromFile(rec2, &srcPage, &srcFile, src_page_index);
+		//AddRecordToFile(rec2, &file,cnt);
 	} else {
+		//Both file and pipe have records, so do 2-way merge.
+
 		ComparisonEngine ce;
 		GetNextRecordFromFile(rec2, &srcPage, &srcFile, src_page_index);
 		while (true) {
