@@ -20,8 +20,7 @@ SortedFile::~SortedFile() {
 }
 
 int SortedFile::Create(const char *fpath, void *startup) {
-	fName = fpath;
-	string meta_file = fpath + ".metadata";
+	fName = (char *) fpath;
 	string meta_file(fpath);
 	meta_file.append(string(".meta"));
 	ofstream meta_data_file;
@@ -116,8 +115,8 @@ void SortedFile::twoWayMerge() {
 	file.Open(0, (char*) fName);
 	//this->MoveFirst();
 
-	Record rec1 = NULL;
-	Record rec2 = NULL;
+	Record rec1;
+	Record rec2;
 
 	if (srcFile.GetLength() == 0) {
 
@@ -128,9 +127,9 @@ void SortedFile::twoWayMerge() {
 	}
 
 	if (srcFile.GetLength() == 0) {
-		if (rec1 != NULL) {
-			AddRecordToFile(rec1, &file);
-		}
+
+		AddRecordToFile(rec1, &file);
+
 		while (output_pipe->Remove(&rec1)) {
 			AddRecordToFile(rec1, &file);
 		}
@@ -162,8 +161,7 @@ void SortedFile::twoWayMerge() {
 			}
 		}
 	}
-
-
+	srcFile.Close();
 }
 
 void appendSourceFileContents(File* dest_file, File* src_file, Page *src_page,
@@ -263,5 +261,5 @@ void SortedFile::reinitialize_bigQ() {
 	input_pipe = new Pipe(PIPE_SIZE);
 	output_pipe = new Pipe(PIPE_SIZE);
 
-	sorting_queue = new BigQ(*input_pipe, *output_pipe, order_maker, runlen);
+	sorting_queue = new BigQ(*input_pipe, *output_pipe, *order_maker, runlen);
 }
