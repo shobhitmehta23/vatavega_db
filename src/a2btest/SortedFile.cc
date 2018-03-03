@@ -86,7 +86,7 @@ int SortedFile::Open(const char *fpath) {
 	return 1;
 }
 
-void SortedFile::twoWayMerg() {
+void SortedFile::twoWayMerge() {
 	//Read the current file contents.
 	//Page temp_page;
 	//file.GetPage(&temp_page, 0);

@@ -30,8 +30,7 @@ private:
 	int runlen;
 	OrderMaker *order_maker;
 	int mode;
-
-	void twoWayMerg();
+	void twoWayMerge();
 };
 
 #endif /* A2BTEST_SORTEDFILE_H_ */
