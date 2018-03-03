@@ -40,17 +40,24 @@ int SortedFile::Create(const char *fpath, void *startup) {
 	meta_data_file.close();
 
 	file.Open(0, (char*) fpath);
-	reinitialize_bigQ();
 
 	return 1;
 }
 
 void SortedFile::Add(Record &addme) {
+
+	if (mode == READ_MODE) {
+		reinitialize_bigQ();
+	}
 	mode = WRITE_MODE;
 	input_pipe->Insert(&addme);
 }
 
 void SortedFile::Load(Schema &myschema, const char *loadpath) {
+
+	if (mode == READ_MODE) {
+			reinitialize_bigQ();
+	}
 	mode = WRITE_MODE;
 
 	//open the given file
@@ -92,8 +99,6 @@ int SortedFile::Open(const char *fpath) {
 	cout << "Open a DbFile" << endl;
 	file.Open(1, (char*) fpath);
 	MoveFirst();
-
-	reinitialize_bigQ();
 
 	return 1;
 }
@@ -246,7 +251,6 @@ int SortedFile::GetNext(Record &fetchme) {
 	if (mode == WRITE_MODE) {
 		twoWayMerge();
 		MoveFirst();
-		reinitialize_bigQ();
 		mode = READ_MODE;
 	}
 
