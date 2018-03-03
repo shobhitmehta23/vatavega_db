@@ -1,7 +1,7 @@
 #include "SortedFile.h"
 #include "BigQ.h"
 
-void AddRecordToFile(Record rec, File *f);
+void AddRecordToFile(Record& rec, File *f);
 int GetNextRecordFromFile(Record &fetchme, Page* p, File* f, off_t &page_index);
 void appendSourceFileContents(File* dest_file, File* src_file, Page *src_page,
 		off_t &page_index);
@@ -74,6 +74,8 @@ int SortedFile::Open(const char *fpath) {
 	cout << "Open a DbFile" << endl;
 	mode = READ_MODE;
 
+	fName = (char *) fpath;
+
 	string meta_file(fpath);
 	meta_file.append(string(".meta"));
 
@@ -83,6 +85,7 @@ int SortedFile::Open(const char *fpath) {
 	int type;
 	meta_data_file >> type;
 
+	order_maker = new OrderMaker;
 	order_maker->deserialize_from_isstream(meta_data_file);
 	meta_data_file >> runlen;
 	meta_data_file.close();
@@ -96,9 +99,10 @@ int SortedFile::Open(const char *fpath) {
 }
 
 void SortedFile::twoWayMerge() {
+	//Shutdown the input pipe
+	input_pipe->ShutDown();
+
 	//Read the current file contents.
-	//Page temp_page;
-	//file.GetPage(&temp_page, 0);
 	file.Close();
 	string temp_name(fName);
 	temp_name.append(".temp");
@@ -128,7 +132,6 @@ void SortedFile::twoWayMerge() {
 	}
 
 	if (srcFile.GetLength() == 0) {
-
 		AddRecordToFile(rec1, &file);
 
 		while (output_pipe->Remove(&rec1)) {
@@ -180,7 +183,9 @@ void appendOutPipeCOntents(File* dest_file, Pipe* out) {
 	}
 }
 
-void AddRecordToFile(Record rec, File *f) {
+void AddRecordToFile(Record& temp, File *f) {
+	Record rec;
+	rec.Copy(&temp);
 
 	Page temp_page; //temporary page to hold the record.
 	//case of a new file.
@@ -220,7 +225,17 @@ int GetNextRecordFromFile(Record &fetchme, Page *p, File *f,
 }
 
 int SortedFile::Close() {
-	return 1;
+	if (mode == WRITE_MODE) {
+		twoWayMerge();
+		delete sorting_queue;
+		delete input_pipe;
+		delete output_pipe;
+	}
+	if (file.Close() >= 0) {
+		return 1; //return 1 if success
+	} else {
+		return 0; // return 0 for failure.
+	}
 }
 
 void SortedFile::MoveFirst() {
