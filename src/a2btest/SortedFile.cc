@@ -104,6 +104,7 @@ int SortedFile::Open(const char *fpath) {
 }
 
 void SortedFile::twoWayMerge() {
+	cout << "TWOWAY**********************************************************************";
 	//Shutdown the input pipe
 	input_pipe->ShutDown();
 
@@ -252,7 +253,10 @@ int SortedFile::Close() {
 }
 
 void SortedFile::MoveFirst() {
-
+	current_page_index = 0; //set current page index to 0 for the first page.
+	if (file.GetLength() != 0) {
+		file.GetPage(&page, current_page_index);
+	}
 }
 
 int SortedFile::GetNext(Record &fetchme) {
