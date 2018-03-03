@@ -76,19 +76,3 @@ int SortedFile::Open(const char *fpath) {
 
 	return 1;
 }
-
-int SortedFile::Close() {
-	return 1;
-}
-
-void SortedFile::MoveFirst() {
-
-}
-
-int SortedFile::GetNext(Record &fetchme) {
-	return 1;
-}
-
-int SortedFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
-	return 1;
-}
