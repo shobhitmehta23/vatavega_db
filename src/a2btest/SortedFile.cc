@@ -1,8 +1,11 @@
 #include "SortedFile.h"
 #include "BigQ.h"
 
-void AddRecordToFile(Record rec, File f);
-int GetNextRecordFromFile(Record &fetchme, Page p, File f, off_t page_index);
+void AddRecordToFile(Record rec, File *f);
+int GetNextRecordFromFile(Record &fetchme, Page* p, File* f, off_t &page_index);
+void appendSourceFileContents(File* dest_file, File* src_file, Page *src_page,
+		off_t &page_index);
+void appendOutPipeCOntents(File* dest_file, Pipe* out);
 
 SortedFile::SortedFile() {
 	mode = READ_MODE;
@@ -111,7 +114,7 @@ void SortedFile::twoWayMerge() {
 	}
 
 	file.Open(0, (char*) fName);
-	this->MoveFirst();
+	//this->MoveFirst();
 
 	Record rec1 = NULL;
 	Record rec2 = NULL;
@@ -124,54 +127,92 @@ void SortedFile::twoWayMerge() {
 		}
 	}
 
-
 	if (srcFile.GetLength() == 0) {
 		if (rec1 != NULL) {
-			AddRecordToFile(rec1, file);
+			AddRecordToFile(rec1, &file);
 		}
 		while (output_pipe->Remove(&rec1)) {
-			AddRecordToFile(rec1, file);
+			AddRecordToFile(rec1, &file);
 		}
 	} else if (!output_pipe->Remove(&rec1)) {
-		GetNextRecordFromFile(rec2, srcPage, srcFile, src_page_index);
-		AddRecordToFile(rec2, file);
+		GetNextRecordFromFile(rec2, &srcPage, &srcFile, src_page_index);
+		AddRecordToFile(rec2, &file);
 	} else {
-
+		ComparisonEngine ce;
+		GetNextRecordFromFile(rec2, &srcPage, &srcFile, src_page_index);
+		while (true) {
+			if (ce.Compare(&rec1, &rec2, order_maker) <= 0) {
+				AddRecordToFile(rec1, &file);
+				if (!output_pipe->Remove(&rec1)) {
+					//append rec2 and the remaining src file to the destination file.
+					AddRecordToFile(rec2, &file);
+					appendSourceFileContents(&file, &srcFile, &srcPage,
+							src_page_index);
+					break;
+				}
+			} else {
+				AddRecordToFile(rec2, &file);
+				if (!GetNextRecordFromFile(rec2, &srcPage, &srcFile,
+						src_page_index)) {
+					//append rec1 and the remaining pipe contents to the destination file.
+					AddRecordToFile(rec1, &file);
+					appendOutPipeCOntents(&file, output_pipe);
+					break;
+				}
+			}
+		}
 	}
+
 
 }
 
-void AddRecordToFile(Record rec, File f) {
+void appendSourceFileContents(File* dest_file, File* src_file, Page *src_page,
+		off_t &page_index) {
+	Record rec;
+	while (GetNextRecordFromFile(rec, src_page, src_file, page_index)) {
+		AddRecordToFile(rec, dest_file);
+	}
+}
+
+void appendOutPipeCOntents(File* dest_file, Pipe* out) {
+	Record rec;
+	while (out->Remove(&rec)) {
+		AddRecordToFile(rec, dest_file);
+	}
+}
+
+void AddRecordToFile(Record rec, File *f) {
 
 	Page temp_page; //temporary page to hold the record.
 	//case of a new file.
-	if (f.GetLength() == 0) {
+	if (f->GetLength() == 0) {
 		if (temp_page.Append(&rec) == 1) { // append the record to the temp page.
-			f.AddPage(&temp_page, 0);
+			f->AddPage(&temp_page, 0);
 		} else {
 			exit(1);  // exit with error.
 		}
 	} else {
-		f.GetPage(&temp_page, f.getLastPageIndex());
-		if (temp_page.Append(&rec) == 1) {  // append record to the last page
-			f.AddPage(&temp_page, f.getLastPageIndex()); // write the last page.
+		f->GetPage(&temp_page, f->getLastPageIndex());
+		if (temp_page.Append(&rec) == 1) { // append record to the last page
+			f->AddPage(&temp_page, f->getLastPageIndex()); // write the last page.
 		} else {
 			temp_page.EmptyItOut();
 			temp_page.Append(&rec);
-			f.AddPage(&temp_page, f.get_new_page_index());
+			f->AddPage(&temp_page, f->get_new_page_index());
 		}
 	}
 }
 
-int GetNextRecordFromFile(Record &fetchme, Page p, File f, off_t &page_index) {
+int GetNextRecordFromFile(Record &fetchme, Page *p, File *f,
+		off_t &page_index) {
 	// try to get the first record from the current page if success leave else try next page.
-	if (p.GetFirst(&fetchme) == 0) {
+	if (p->GetFirst(&fetchme) == 0) {
 		page_index++; //increment the current page index page for the next page.
 
 		//check if next page exists.
-		if (page_index < f.get_new_page_index()) {
-			f.GetPage(&p, page_index); //load the next page.
-			return p.GetFirst(&fetchme); // return the first record.
+		if (page_index < f->get_new_page_index()) {
+			f->GetPage(p, page_index); //load the next page.
+			return p->GetFirst(&fetchme); // return the first record.
 		} else {
 			return 0; // no next record, end of the file EOF.
 		}
