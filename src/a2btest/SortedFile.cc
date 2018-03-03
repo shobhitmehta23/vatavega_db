@@ -104,7 +104,6 @@ int SortedFile::Open(const char *fpath) {
 }
 
 void SortedFile::twoWayMerge() {
-	cout << "TWOWAY**********************************************************************";
 	//Shutdown the input pipe
 	input_pipe->ShutDown();
 
