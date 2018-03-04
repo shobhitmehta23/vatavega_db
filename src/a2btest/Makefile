@@ -7,10 +7,13 @@ ifdef linux
 tag = -n
 endif
 
-all: clean test.out
+all: clean test.out a22.out
 
 test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o HeapFile.o SortedFile.o DBFileBase.o y.tab.o lex.yy.o test.o
 	$(CC) -o test.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o HeapFile.o SortedFile.o DBFileBase.o y.tab.o lex.yy.o test.o -lfl -lpthread
+	
+a22.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o HeapFile.o SortedFile.o DBFileBase.o y.tab.o lex.yy.o test.o
+	$(CC) -o a22.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o HeapFile.o SortedFile.o DBFileBase.o y.tab.o lex.yy.o test.o -lfl -lpthread
 	
 a2test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o HeapFile.o SortedFile.o DBFileBase.o y.tab.o lex.yy.o a2-test.o
 	$(CC) -o a2test.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o HeapFile.o SortedFile.o DBFileBase.o y.tab.o lex.yy.o a2-test.o -lfl -lpthread
