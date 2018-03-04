@@ -34,6 +34,9 @@ private:
 	OrderMaker *order_maker;
 	int mode;
 	void twoWayMerge();
+	bool binary_search(Record& fetchMe, Record& literal,
+						OrderMaker * query_order_maker,
+						OrderMaker * cnf_literal_order_maker);
 };
 
 #endif /* A2BTEST_SORTEDFILE_H_ */

@@ -19,6 +19,7 @@ private:
 
 	int Run(Record *left, Record *literal, Comparison *c);
 	int Run(Record *left, Record *right, Record *literal, Comparison *c);
+	static bool verify_attribute_match(Comparison& comp, int att);
 
 public:
 
@@ -46,6 +47,10 @@ public:
 	// like the last one, but for unary operations
 	int Compare(Record *left, Record *literal, CNF *myComparison);
 
+	static void construct_query_order_makers(OrderMaker *query_order_maker,
+												OrderMaker *cnf_literal_order_maker,
+												OrderMaker *sorted_file_order_maker,
+												CNF& cnf);
 
 };
 

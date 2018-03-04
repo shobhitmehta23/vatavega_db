@@ -414,7 +414,54 @@ int ComparisonEngine :: Run (Record *left, Record *right, Record *literal, Compa
 		}	
 		break;
 	}
+}
 
+
+void ComparisonEngine::construct_query_order_makers(
+		OrderMaker *query_order_maker, OrderMaker *cnf_literal_order_maker,
+		OrderMaker *sorted_file_order_maker, CNF& cnf) {
+	query_order_maker->numAtts = 0;
+	cnf_literal_order_maker->numAtts = 0;
+
+	for (int i = 0; i < sorted_file_order_maker->numAtts; i++) {
+		int attribute_index = sorted_file_order_maker->whichAtts[i];
+		Type type = sorted_file_order_maker->whichTypes[i];
+
+		for (int j = 0; j < cnf.numAnds; j++) {
+			Comparison *orList = cnf.orList[j];
+
+			if (cnf.orLens[j] != 1) {
+				continue;
+			}
+
+			if (verify_attribute_match(orList[0], attribute_index)) {
+				query_order_maker->whichAtts[query_order_maker->numAtts] =
+						attribute_index;
+				query_order_maker->whichTypes[query_order_maker->numAtts++] =
+						type;
+				cnf_literal_order_maker->whichAtts[cnf_literal_order_maker->numAtts] =
+						j;
+				cnf_literal_order_maker->whichTypes[cnf_literal_order_maker->numAtts++] =
+						type;
+			} else {
+				return;
+			}
+		}
+	}
+}
+
+bool ComparisonEngine::verify_attribute_match(Comparison& comp, int att) {
+	if ((comp.op == Equals) && (comp.operand1 == Literal)
+			&& (comp.whichAtt1 == att)) {
+		return true;
+	}
+
+	if ((comp.op == Equals) && (comp.operand2 == Literal)
+			&& (comp.whichAtt2 == att)) {
+		return true;
+	}
+
+	return false;
 }
 
 

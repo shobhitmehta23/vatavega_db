@@ -2,9 +2,9 @@
 #include <iostream>
 #include <stdlib.h>
 #include <string.h>
+#include "Defs.h"
 
 #include "Comparison.h"
-
 
 Comparison::Comparison()
 {

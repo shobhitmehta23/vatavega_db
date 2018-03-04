@@ -281,7 +281,99 @@ int SortedFile::GetNext(Record &fetchme) {
 }
 
 int SortedFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
-	return 1;
+	if (mode == WRITE_MODE) {
+		twoWayMerge();
+		MoveFirst();
+		mode = READ_MODE;
+	}
+
+	ComparisonEngine comparisonEngine;
+
+	OrderMaker query_order_maker, cnf_literal_order_maker;
+	ComparisonEngine::construct_query_order_makers(&query_order_maker,
+			&cnf_literal_order_maker, order_maker, cnf);
+
+	if (binary_search(fetchme, literal, &query_order_maker,
+			&cnf_literal_order_maker)) {
+
+		do {
+			if (comparisonEngine.Compare(&fetchme, &query_order_maker, &literal,
+					&cnf_literal_order_maker)) {
+				return 0;
+			}
+
+			// be careful the below compare function returns true on
+			// when cnf is completely satisfied.
+			if (comparisonEngine.Compare(&fetchme, &literal, &cnf)) {
+				return 1;
+			}
+		} while (GetNext(fetchme));
+	} else {
+		return 0;
+	}
+}
+
+bool SortedFile::binary_search(Record& fetchMe, Record& literal,
+		OrderMaker * query_order_maker, OrderMaker * cnf_literal_order_maker) {
+
+	if (GetNext(fetchMe) == 0) {
+		return false;
+	}
+
+	ComparisonEngine comparisonEngine;
+	int comparison_result = comparisonEngine.Compare(&fetchMe,
+			query_order_maker, &literal, cnf_literal_order_maker);
+
+	if (comparison_result == 0) {
+		return true;
+	}
+
+	if (comparison_result > 0) {
+		return false;
+	}
+
+	int low = current_page_index;
+	int high = file.getLastPageIndex();
+	int mid = (low + high) / 2;
+
+	while (low < mid) {
+		file.GetPage(&page, mid);
+		if (GetNext(fetchMe) == 0) {
+			cerr << "first record of middle page cannot be empty!!" << endl;
+			exit(1);
+		}
+
+		int comparison_result = comparisonEngine.Compare(&fetchMe,
+				query_order_maker, &literal, cnf_literal_order_maker);
+
+		if (comparison_result == 0) {
+			high = mid;
+		} else if (comparison_result > 0) {
+			high = mid - 1;
+		} else {
+			low = mid;
+		}
+
+		mid = (low + high) / 2;
+	}
+
+	file.GetPage(&page, low);
+
+// find matching record in the single selected page
+	do {
+		if (GetNext(fetchMe) == 0) {
+			return false;
+		}
+
+		int comparison_result = comparisonEngine.Compare(&fetchMe,
+				query_order_maker, &literal, cnf_literal_order_maker);
+
+		if (comparison_result == 0) {
+			return true;
+		}
+	} while (comparison_result < 0);
+
+	return false;
 }
 
 void SortedFile::reinitialize_bigQ() {
