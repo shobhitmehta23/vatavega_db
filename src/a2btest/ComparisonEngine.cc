@@ -452,12 +452,12 @@ void ComparisonEngine::construct_query_order_makers(
 
 bool ComparisonEngine::verify_attribute_match(Comparison& comp, int att) {
 	if ((comp.op == Equals) && (comp.operand1 == Literal)
-			&& (comp.whichAtt1 == att)) {
+			&& (comp.whichAtt2 == att)) {
 		return true;
 	}
 
 	if ((comp.op == Equals) && (comp.operand2 == Literal)
-			&& (comp.whichAtt2 == att)) {
+			&& (comp.whichAtt1 == att)) {
 		return true;
 	}
 
