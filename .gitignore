@@ -11,6 +11,7 @@
 *.tbl
 *.tar.gz
 *.meta
+*.temp
 
 # OS generated files #
 ######################
