@@ -6,13 +6,16 @@
 #include "File.h"
 #include "Comparison.h"
 #include "ComparisonEngine.h"
-#include <stdlib.h>
+#include <iostream>
+#include <fstream>
+
 
 // This stores an individual comparison that is part of a CNF
 class Comparison {
 
 	friend class ComparisonEngine;
 	friend class CNF;
+	friend class SortedFile;
 
 	Target operand1;
 	int whichAtt1;
@@ -43,15 +46,13 @@ class OrderMaker {
 	friend class ComparisonEngine;
 	friend class CNF;
 
-public:
-
 	int numAtts;
 
 	int whichAtts[MAX_ANDS];
 	Type whichTypes[MAX_ANDS];
 
+public:
 	
-
 	// creates an empty OrdermMaker
 	OrderMaker();
 
@@ -61,6 +62,9 @@ public:
 
 	// print to the screen
 	void Print ();
+
+	void serialize_to_ofstream(std::ofstream& ofs);
+	void deserialize_from_isstream(std::ifstream& ifs);
 };
 
 class Record;
@@ -71,6 +75,7 @@ class Record;
 class CNF {
 
 	friend class ComparisonEngine;
+	friend class SortedFile;
 
 	Comparison orList[MAX_ANDS][MAX_ORS];
 	

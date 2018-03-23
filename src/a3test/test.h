@@ -17,7 +17,11 @@ using namespace std;
 const char *settings = "test.cat";
 
 // donot change this information here
-char *catalog_path, *dbfile_dir, *tpch_dir = NULL;
+//char *catalog_path, *dbfile_dir, *tpch_dir = NULL;
+
+char *catalog_path = "catalog";
+char *dbfile_dir = "";
+char *tpch_dir ="/Users/digvijaykulkarni/Dbi/TestData/test-tables/MBs/";
 
 extern "C" {
 	int yyparse(void);   // defined in y.tab.c

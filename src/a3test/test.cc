@@ -93,7 +93,6 @@ void init_SF_c (char *pred_str, int numpgs) {
 // select * from partsupp where ps_supplycost <1.03 
 // expected output: 31 records
 void q1 () {
-
 	char *pred_ps = "(ps_supplycost < 1.03)";
 	init_SF_ps (pred_ps, 100);
 
