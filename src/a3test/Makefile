@@ -9,8 +9,9 @@ endif
 
 all: clean test.out
 
-test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o HeapFile.o SortedFile.o DBFileBase.o y.tab.o lex.yy.o test.o
-	$(CC) -o test.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o HeapFile.o SortedFile.o DBFileBase.o y.tab.o lex.yy.o test.o -lfl -lpthread
+
+test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Pipe.o HeapFile.o SortedFile.o DBFileBase.o BigQ.o RelOp.o Function.o y.tab.o yyfunc.tab.o lex.yy.o lex.yyfunc.o test.o
+	$(CC) -o test.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Pipe.o HeapFile.o SortedFile.o DBFileBase.o BigQ.o RelOp.o Function.o y.tab.o yyfunc.tab.o lex.yy.o lex.yyfunc.o test.o -lfl -lpthread
 	
 a2-2test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o HeapFile.o SortedFile.o DBFileBase.o y.tab.o lex.yy.o a2-2test.o
 	$(CC) -o a2-2test.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o HeapFile.o SortedFile.o DBFileBase.o y.tab.o lex.yy.o a2-2test.o -lfl -lpthread
@@ -24,14 +25,15 @@ a1test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Pi
 test.o: test.cc
 	$(CC) -g -c test.cc
 	
-a2-2test.o: test2b.cc
-	$(CC) -g -c test2b.cc
+a2-2test.o: a2-2test.cc
+	$(CC) -g -c a2-2test.cc
 
-#a2-test.o: a2-test.cc
-#	$(CC) -g -c a2-test.cc
+a2-test.o: a2-test.cc
+	$(CC) -g -c a2-test.cc
 
 a1-test.o: a1-test.cc
 	$(CC) -g -c a1-test.cc
+
 
 HeapFile.o: HeapFile.cc
 	$(CC) -g -c HeapFile.cc
@@ -41,7 +43,7 @@ SortedFile.o: SortedFile.cc
 	
 DBFileBase.o: DBFileBase.cc
 	$(CC) -g -c DBFileBase.cc
-	
+
 Comparison.o: Comparison.cc
 	$(CC) -g -c Comparison.cc
 	
@@ -74,7 +76,7 @@ Schema.o: Schema.cc
 	
 y.tab.o: Parser.y
 	yacc -d Parser.y
-	#sed $(tag) -e "s/  __attribute__ ((__unused__))$$/# ifndef __cplusplus\n  __attribute__ ((__unused__));\n# endif/" y.tab.c 
+	#sed $(tag) y.tab.c -e "s/  __attribute__ ((__unused__))$$/# ifndef __cplusplus\n  __attribute__ ((__unused__));\n# endif/" 
 	g++ -c y.tab.c
 		
 yyfunc.tab.o: ParserFunc.y
