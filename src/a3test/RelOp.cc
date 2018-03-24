@@ -1,8 +1,11 @@
 #include "RelOp.h"
+#include "BigQ.h"
 
 void *selectFile(void *thread_args);
 void *selectPipe(void *thread_args);
 void *project(void *thread_args);
+void *removeDuplicate(void *thread_args);
+void *writeOut(void *thread_args);
 
 /*
  * ---------------------------SelectFile----------------------------------------
@@ -20,9 +23,6 @@ void SelectFile::Run(DBFile &inFile, Pipe &outPipe, CNF &selOp,
 
 	//spawn the thread and pass the arguments.
 	pthread_create(&thread, NULL, selectFile, (void *) args);
-
-	delete args;
-
 }
 
 void SelectFile::WaitUntilDone() {
@@ -48,6 +48,7 @@ void *selectFile(void *thread_args) {
 	delete temp_rec;
 	//Shut down output pipe in the end.
 	outPipe->ShutDown();
+	delete args;
 }
 /*
  * ---------------------------SelectPipe----------------------------------------
@@ -63,8 +64,6 @@ void SelectPipe::Run(Pipe &inPipe, Pipe &outPipe, CNF &selOp, Record &literal) {
 
 	//spawn the thread and pass the arguments.
 	pthread_create(&thread, NULL, selectPipe, (void *) args);
-
-	delete args;
 }
 
 /*
@@ -91,6 +90,7 @@ void *selectPipe(void *thread_args) {
 
 	//Shut down output pipe in the end.
 	outPipe->ShutDown();
+	delete args;
 }
 
 void SelectPipe::WaitUntilDone() {
@@ -116,8 +116,6 @@ void Project::Run(Pipe &inPipe, Pipe &outPipe, int *keepMe, int numAttsInput,
 
 	//spawn the thread and pass the arguments.
 	pthread_create(&thread, NULL, project, (void *) args);
-
-	delete args;
 }
 
 void Project::WaitUntilDone() {
@@ -146,18 +144,108 @@ void *project(void *thread_args) {
 
 	//Shut down output pipe in the end.
 	outPipe->ShutDown();
+	delete args;
+}
+
+/*
+ * ---------------------------WriteOut----------------------------------------
+ */
+
+void WriteOut::Run(Pipe &inPipe, FILE *outFile, Schema &mySchema) {
+	//create a struc object to hold all the arguments to be passed to the thread.
+	relOp_thread_arguments *args = new relOp_thread_arguments;
+	args->inPipe = &inPipe;
+	args->outFile = outFile;
+	args->mySchema = &mySchema;
+
+	//spawn the thread and pass the arguments.
+	pthread_create(&thread, NULL, writeOut, (void *) args);
+}
+
+void *writeOut(void *thread_args) {
+	relOp_thread_arguments *args;
+	args = (relOp_thread_arguments *) thread_args;
+	Pipe *inPipe = args->inPipe;
+	FILE *outFile = args->outFile;
+	Schema *mySchema = args->mySchema;
+
+	Record* temp_rec = new Record;
+	while (inPipe->Remove(temp_rec)) {
+		temp_rec->Print(mySchema, outFile);
+	}
+	delete temp_rec;
+	delete args;
+}
+
+void WriteOut::WaitUntilDone() {
+	pthread_join(thread, NULL);
+}
+
+void WriteOut::Use_n_Pages(int runlen) {
+	this->runlen = runlen;
 }
 
 /*
  * ---------------------------DuplicateRemoval----------------------------------------
  */
 void DuplicateRemoval::Run(Pipe &inPipe, Pipe &outPipe, Schema &mySchema) {
+	//create a struc object to hold all the arguments to be passed to the thread.
+	relOp_thread_arguments *args = new relOp_thread_arguments;
+	args->inPipe = &inPipe;
+	args->outPipe = &outPipe;
+	args->runlen = this->runlen;
+	args->mySchema = &mySchema;
+
+	//spawn the thread and pass the arguments.
+	pthread_create(&thread, NULL, removeDuplicate, (void *) args);
+
 }
 void DuplicateRemoval::WaitUntilDone() {
 	pthread_join(thread, NULL);
 }
 void DuplicateRemoval::Use_n_Pages(int n) {
-	this->runlen = runlen;
+	this->runlen = n;
+}
+
+void *removeDuplicate(void *thread_args) {
+	relOp_thread_arguments *args;
+	args = (relOp_thread_arguments *) thread_args;
+	Pipe *inPipe = args->inPipe;
+	Pipe *outPipe = args->outPipe;
+	Schema *mySchema = args->mySchema;
+	int runlen = args->runlen;
+	OrderMaker * order_maker = new OrderMaker(mySchema);
+	Pipe *tempPipe = new Pipe(outPipe->getBufferSize());
+	BigQ *bigQ = new BigQ(*inPipe, *tempPipe, *order_maker, runlen);
+
+	Record * current_rec = new Record;
+	Record * prev_rec = NULL;
+	Record * current_rec_copy = new Record;
+
+	while (tempPipe->Remove(current_rec)) {
+		if (prev_rec == NULL) {
+			current_rec_copy->Copy(current_rec);
+			outPipe->Insert(current_rec);
+		} else {
+			ComparisonEngine comparison_engine;
+			if (comparison_engine.Compare(current_rec, prev_rec, order_maker)) {
+				current_rec_copy->Copy(current_rec);
+				outPipe->Insert(current_rec);
+			}
+		}
+
+		prev_rec = current_rec_copy;
+	}
+
+	delete current_rec;
+	delete current_rec_copy;
+
+	//Shut down output pipe in the end.
+	outPipe->ShutDown();
+	delete order_maker;
+	delete tempPipe;
+	delete bigQ;
+	delete args;
 }
 
 /*
@@ -169,6 +257,6 @@ void Sum::WaitUntilDone() {
 	pthread_join(thread, NULL);
 }
 void Sum::Use_n_Pages(int n) {
-	this->runlen = runlen;
+	this->runlen = n;
 }
 

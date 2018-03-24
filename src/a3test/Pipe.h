@@ -49,6 +49,9 @@ public:
 	// there is no more data that is going to be added into the pipe
 	void ShutDown ();
 
+	// returns the buffer size of the pipe
+	int getBufferSize();
+
 };
 
 #endif
