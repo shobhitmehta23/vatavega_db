@@ -468,6 +468,52 @@ void Record :: Print (Schema *mySchema) {
 	cout << "\n";
 }
 
+void Record :: Print (Schema *mySchema, FILE * file) {
+
+	int n = mySchema->GetNumAtts();
+	Attribute *atts = mySchema->GetAtts();
+
+	// loop through all of the attributes
+	for (int i = 0; i < n; i++) {
+
+		// print the attribute name
+		fprintf(file, "%s:", atts[i].name);
+
+		// use the i^th slot at the head of the record to get the
+		// offset to the correct attribute in the record
+		int pointer = ((int *) bits)[i + 1];
+
+		// here we determine the type, which given in the schema;
+		// depending on the type we then print out the contents
+		fprintf(file, "[");
+
+		// first is integer
+		if (atts[i].myType == Int) {
+			int *myInt = (int *) &(bits[pointer]);
+			fprintf(file, "%d", *myInt);
+
+		// then is a double
+		} else if (atts[i].myType == Double) {
+			double *myDouble = (double *) &(bits[pointer]);
+			fprintf(file, "%lf", *myDouble);
+
+		// then is a character string
+		} else if (atts[i].myType == String) {
+			char *myString = (char *) &(bits[pointer]);
+			fprintf(file, "%s", myString);
+		}
+
+		fprintf(file, "]");
+
+		// print out a comma as needed to make things pretty
+		if (i != n - 1) {
+			fprintf(file, ", ");
+		}
+	}
+
+	fprintf(file, "\n");
+}
+
 int Record :: get_record_size() const {
 	return ((int *)bits)[0];
 }

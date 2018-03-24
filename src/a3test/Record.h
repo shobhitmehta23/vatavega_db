@@ -69,6 +69,10 @@ public:
 	// that the schema also be given so that the record can be interpreted
 	void Print (Schema *mySchema);
 
+	// prints the contents of the record to file pointed by file pointer; this requires
+	// that the schema also be given so that the record can be interpreted
+	void Print (Schema *mySchema, FILE * file);
+
 	// returns the size of records in bytes
 	int get_record_size() const;
 };

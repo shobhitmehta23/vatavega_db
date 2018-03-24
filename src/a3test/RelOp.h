@@ -22,10 +22,13 @@ typedef struct relOp_thread_arguments {
 	CNF *selOp;
 	Record *literal;
 	DBFile *inFile;
+	Schema *mySchema;
 	int *keepMe;
+	FILE *outFile;
 	int numAttsInput;
 	int numAttsOutput;
 	Function* computeMe;
+	int runlen;
 } relOp_thread_arguments;
 
 class SelectFile: public RelationalOp {
@@ -101,12 +104,12 @@ public:
 	}
 };
 class WriteOut: public RelationalOp {
+private:
+	pthread_t thread;
+	int runlen = 1;
 public:
-	void Run(Pipe &inPipe, FILE *outFile, Schema &mySchema) {
-	}
-	void WaitUntilDone() {
-	}
-	void Use_n_Pages(int n) {
-	}
+	void Run(Pipe &inPipe, FILE *outFile, Schema &mySchema);
+	void WaitUntilDone();
+	void Use_n_Pages(int n);
 };
 #endif

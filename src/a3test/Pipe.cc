@@ -130,3 +130,8 @@ void Pipe :: ShutDown () {
 	pthread_mutex_unlock (&pipeMutex);
 	
 }
+
+
+int Pipe ::  getBufferSize() {
+	return totSpace;
+}
