@@ -1,8 +1,10 @@
 #include "RelOp.h"
+#include <sstream>
 
 void *selectFile(void *thread_args);
 void *selectPipe(void *thread_args);
 void *project(void *thread_args);
+void *sum(void *thread_args);
 
 /*
  * ---------------------------SelectFile----------------------------------------
@@ -164,6 +166,59 @@ void DuplicateRemoval::Use_n_Pages(int n) {
  * ---------------------------Sum----------------------------------------
  */
 void Sum::Run(Pipe &inPipe, Pipe &outPipe, Function &computeMe) {
+	relOp_thread_arguments *args = new relOp_thread_arguments;
+	args->inPipe = &inPipe;
+	args->outPipe = &outPipe;
+	args->computeMe = &computeMe;
+
+	//spawn the thread and pass the arguments.
+	pthread_create(&thread, NULL, sum, (void *) args);
+}
+
+void *sum(void *thread_args) {
+	relOp_thread_arguments *args;
+	args = (relOp_thread_arguments *) thread_args;
+	Pipe *inPipe = args->inPipe;
+	Pipe *outPipe = args->outPipe;
+	Function *computeMe = args->computeMe;
+
+	Record* temp_rec = new Record;
+	int intResult;
+	double doubleResult;
+	int intSum = 0;
+	double doubleSum = 0.0;
+	Type type;
+	while (inPipe->Remove(temp_rec)) {
+		type = computeMe->Apply(*temp_rec, intResult, doubleResult);
+		intSum += intResult;
+		doubleSum += doubleResult;
+	}
+	delete temp_rec;
+	Attribute attr[1];
+	attr[0].myType = type;
+	attr[0].name = "SUM";
+	std::stringstream strStream;
+	//strStream << (type == Int) ? intSum : doubleSum;
+	if (type == Int) {
+		strStream << intSum;
+	} else {
+		strStream << doubleSum;
+	}
+	strStream << "|";
+
+	Schema outSchema("temp_sum_schema", 1, attr);
+	//cout << "type*********" << type << endl;
+//	cout << "string*********" << strStream.str() << endl;
+//	cout << "doubleSum*********" << doubleSum << endl;
+
+	Record out_rec;
+	out_rec.ComposeRecord(&outSchema, strStream.str().c_str());
+	outPipe->Insert(&out_rec);
+
+//Shut down output pipe in the end.
+	outPipe->ShutDown();
+	delete args;
+
 }
 void Sum::WaitUntilDone() {
 	pthread_join(thread, NULL);

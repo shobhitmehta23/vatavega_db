@@ -25,6 +25,7 @@ typedef struct relOp_thread_arguments {
 	int *keepMe;
 	int numAttsInput;
 	int numAttsOutput;
+	Function* computeMe;
 } relOp_thread_arguments;
 
 class SelectFile: public RelationalOp {
