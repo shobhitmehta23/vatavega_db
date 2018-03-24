@@ -22,6 +22,9 @@ typedef struct relOp_thread_arguments {
 	CNF *selOp;
 	Record *literal;
 	DBFile *inFile;
+	int *keepMe;
+	int numAttsInput;
+	int numAttsOutput;
 } relOp_thread_arguments;
 
 class SelectFile: public RelationalOp {
@@ -49,14 +52,14 @@ public:
 	void Use_n_Pages(int n);
 };
 class Project: public RelationalOp {
+private:
+	pthread_t thread;
+	int runlen = 1;
 public:
 	void Run(Pipe &inPipe, Pipe &outPipe, int *keepMe, int numAttsInput,
-			int numAttsOutput) {
-	}
-	void WaitUntilDone() {
-	}
-	void Use_n_Pages(int n) {
-	}
+			int numAttsOutput);
+	void WaitUntilDone();
+	void Use_n_Pages(int n);
 };
 class Join: public RelationalOp {
 public:
@@ -69,22 +72,22 @@ public:
 	}
 };
 class DuplicateRemoval: public RelationalOp {
+private:
+	pthread_t thread;
+	int runlen = 1;
 public:
-	void Run(Pipe &inPipe, Pipe &outPipe, Schema &mySchema) {
-	}
-	void WaitUntilDone() {
-	}
-	void Use_n_Pages(int n) {
-	}
+	void Run(Pipe &inPipe, Pipe &outPipe, Schema &mySchema);
+	void WaitUntilDone();
+	void Use_n_Pages(int n);
 };
 class Sum: public RelationalOp {
+private:
+	pthread_t thread;
+	int runlen = 1;
 public:
-	void Run(Pipe &inPipe, Pipe &outPipe, Function &computeMe) {
-	}
-	void WaitUntilDone() {
-	}
-	void Use_n_Pages(int n) {
-	}
+	void Run(Pipe &inPipe, Pipe &outPipe, Function &computeMe);
+	void WaitUntilDone();
+	void Use_n_Pages(int n);
 };
 class GroupBy: public RelationalOp {
 public:
