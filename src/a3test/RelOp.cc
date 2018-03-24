@@ -20,9 +20,6 @@ void SelectFile::Run(DBFile &inFile, Pipe &outPipe, CNF &selOp,
 	//spawn the thread and pass the arguments.
 	pthread_create(&thread, NULL, selectPipe, (void *) args);
 
-	//Shut down output pipe in the end.
-	outPipe.ShutDown();
-
 	delete args;
 
 }
@@ -48,6 +45,8 @@ void *selectFile(void *thread_args) {
 		outPipe->Insert(temp_rec);
 	}
 	delete temp_rec;
+	//Shut down output pipe in the end.
+	outPipe->ShutDown();
 }
 /*
  * ---------------------------SelectPipe----------------------------------------
@@ -63,9 +62,6 @@ void SelectPipe::Run(Pipe &inPipe, Pipe &outPipe, CNF &selOp, Record &literal) {
 
 	//spawn the thread and pass the arguments.
 	pthread_create(&thread, NULL, selectPipe, (void *) args);
-
-	//Shut down output pipe in the end.
-	outPipe.ShutDown();
 
 	delete args;
 }
@@ -91,6 +87,9 @@ void *selectPipe(void *thread_args) {
 		}
 	}
 	delete temp_rec;
+
+	//Shut down output pipe in the end.
+	outPipe->ShutDown();
 }
 
 void SelectPipe::WaitUntilDone() {
