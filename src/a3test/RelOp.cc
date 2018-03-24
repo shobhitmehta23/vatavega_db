@@ -18,7 +18,7 @@ void SelectFile::Run(DBFile &inFile, Pipe &outPipe, CNF &selOp,
 	args->literal = &literal;
 
 	//spawn the thread and pass the arguments.
-	pthread_create(&thread, NULL, selectPipe, (void *) args);
+	pthread_create(&thread, NULL, selectFile, (void *) args);
 
 	delete args;
 
