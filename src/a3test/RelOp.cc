@@ -8,6 +8,9 @@ void *project(void *thread_args);
 void *sum(void *thread_args);
 void *removeDuplicate(void *thread_args);
 void *writeOut(void *thread_args);
+void *groupBy(void *thread_args);
+void insertGroupByRecord(OrderMaker* order_maker, Type type, int intSum,
+		double doubleSum, Record *prev_rec, Pipe* outPipe);
 
 /*
  * ---------------------------SelectFile----------------------------------------
@@ -295,9 +298,6 @@ void *sum(void *thread_args) {
 	strStream << "|";
 
 	Schema outSchema("temp_sum_schema", 1, attr);
-	//cout << "type*********" << type << endl;
-//	cout << "string*********" << strStream.str() << endl;
-//	cout << "doubleSum*********" << doubleSum << endl;
 
 	Record out_rec;
 	out_rec.ComposeRecord(&outSchema, strStream.str().c_str());
@@ -315,3 +315,120 @@ void Sum::Use_n_Pages(int n) {
 	this->runlen = n;
 }
 
+/*
+ * ---------------------------GroupBy----------------------------------------
+ */
+
+void GroupBy::Run(Pipe &inPipe, Pipe &outPipe, OrderMaker &groupAtts,
+		Function &computeMe) {
+	//create a struc object to hold all the arguments to be passed to the thread.
+	relOp_thread_arguments *args = new relOp_thread_arguments;
+	args->inPipe = &inPipe;
+	args->outPipe = &outPipe;
+	args->computeMe = &computeMe;
+	args->orderMaker = &groupAtts;
+	args->runlen = this->runlen;
+
+	//spawn the thread and pass the arguments.
+	pthread_create(&thread, NULL, groupBy, (void *) args);
+}
+
+void *groupBy(void *thread_args) {
+	relOp_thread_arguments *args;
+	args = (relOp_thread_arguments *) thread_args;
+	Pipe *inPipe = args->inPipe;
+	Pipe *outPipe = args->outPipe;
+	Function *computeMe = args->computeMe;
+	OrderMaker *order_maker = args->orderMaker;
+	int runlen = args->runlen;
+	Pipe * tempPipe = new Pipe(outPipe->getBufferSize());
+	BigQ * sorting_queue = new BigQ(*inPipe, *tempPipe, *order_maker, runlen);
+
+	Record * current_rec = new Record;
+	Record * prev_rec = NULL;
+	Record * current_rec_copy = new Record;
+
+	int intResult;
+	double doubleResult;
+	int intSum = 0;
+	double doubleSum = 0.0;
+	Type type;
+
+	while (tempPipe->Remove(current_rec)) {
+		if (prev_rec == NULL) {
+			current_rec_copy->Copy(current_rec);
+			//outPipe->Insert(current_rec);
+		} else {
+			ComparisonEngine comparison_engine;
+			if (comparison_engine.Compare(current_rec, prev_rec, order_maker)) {
+				current_rec_copy->Copy(current_rec);
+				//construct a new record for the group and insert it in the out pipe.
+				insertGroupByRecord(order_maker, type, intSum, doubleSum,
+						prev_rec, outPipe);
+
+				intSum = 0;
+				doubleSum = 0.0;
+			}
+		}
+
+		type = computeMe->Apply(*current_rec, intResult, doubleResult);
+		intSum += intResult;
+		doubleSum += doubleResult;
+
+		prev_rec = current_rec_copy;
+	}
+	//construct a new record for the LAST group and insert it in the out pipe.
+	insertGroupByRecord(order_maker, type, intSum, doubleSum, prev_rec,
+			outPipe);
+	outPipe->ShutDown();
+
+	delete sorting_queue;
+	delete tempPipe;
+	delete current_rec;
+	delete current_rec_copy;
+	delete args;
+}
+/*
+ * constructs a new record for the group and insert it in the out pipe.
+ */
+void insertGroupByRecord(OrderMaker* order_maker, Type type, int intSum,
+		double doubleSum, Record *prev_rec, Pipe* outPipe) {
+	int numGrpByAttr = order_maker->getNumberOfAttributes();
+	int* grpByAttrs = order_maker->getAttributes();
+	Attribute attr[1];
+	attr[0].myType = type;
+	attr[0].name = "SUM";
+	std::stringstream strStream;
+	//strStream << (type == Int) ? intSum : doubleSum;
+	if (type == Int) {
+		strStream << intSum;
+	} else {
+		strStream << doubleSum;
+	}
+	strStream << "|";
+
+	Schema outSchema("temp_sum_schema", 1, attr);
+
+	Record sum_rec;
+	sum_rec.ComposeRecord(&outSchema, strStream.str().c_str());
+
+	Record* out_rec = new Record;
+	int attributes[1 + numGrpByAttr];
+	int sum[1] = { 0 };
+	copy(sum, sum + 1, attributes);
+	copy(grpByAttrs, grpByAttrs + numGrpByAttr, attributes + 1);
+	out_rec->MergeRecords(&sum_rec, prev_rec, 1, numGrpByAttr, attributes,
+			1 + numGrpByAttr, 1);
+
+	//construct a new record for the group and insert it in the out pipe.
+	outPipe->Insert(out_rec);
+	delete grpByAttrs;
+}
+
+void GroupBy::WaitUntilDone() {
+	pthread_join(thread, NULL);
+}
+
+void GroupBy::Use_n_Pages(int runlen) {
+	this->runlen = runlen;
+}

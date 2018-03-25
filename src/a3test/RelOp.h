@@ -29,6 +29,7 @@ typedef struct relOp_thread_arguments {
 	int numAttsOutput;
 	Function* computeMe;
 	int runlen;
+	OrderMaker * orderMaker;
 } relOp_thread_arguments;
 
 class SelectFile: public RelationalOp {
@@ -55,6 +56,7 @@ public:
 	void WaitUntilDone();
 	void Use_n_Pages(int n);
 };
+
 class Project: public RelationalOp {
 private:
 	pthread_t thread;
@@ -65,6 +67,7 @@ public:
 	void WaitUntilDone();
 	void Use_n_Pages(int n);
 };
+
 class Join: public RelationalOp {
 public:
 	void Run(Pipe &inPipeL, Pipe &inPipeR, Pipe &outPipe, CNF &selOp,
@@ -75,6 +78,7 @@ public:
 	void Use_n_Pages(int n) {
 	}
 };
+
 class DuplicateRemoval: public RelationalOp {
 private:
 	pthread_t thread;
@@ -84,6 +88,7 @@ public:
 	void WaitUntilDone();
 	void Use_n_Pages(int n);
 };
+
 class Sum: public RelationalOp {
 private:
 	pthread_t thread;
@@ -93,16 +98,18 @@ public:
 	void WaitUntilDone();
 	void Use_n_Pages(int n);
 };
+
 class GroupBy: public RelationalOp {
+private:
+	pthread_t thread;
+	int runlen = 1;
 public:
 	void Run(Pipe &inPipe, Pipe &outPipe, OrderMaker &groupAtts,
-			Function &computeMe) {
-	}
-	void WaitUntilDone() {
-	}
-	void Use_n_Pages(int n) {
-	}
+			Function &computeMe);
+	void WaitUntilDone();
+	void Use_n_Pages(int n);
 };
+
 class WriteOut: public RelationalOp {
 private:
 	pthread_t thread;

@@ -638,4 +638,13 @@ void CNF :: GrowFromParseTree (struct AndList *parseTree, Schema *mySchema,
 	remove("hkljdfgkSDFSDF");
 }
 
-
+int* OrderMaker::getAttributes() {
+	int* copyWhichAttr = new int[numAtts];
+	for (int i = 0; i < numAtts; i++) {
+		copyWhichAttr[i] = whichAtts[i];
+	}
+	return copyWhichAttr;
+}
+int OrderMaker::getNumberOfAttributes() {
+	return numAtts;
+}
