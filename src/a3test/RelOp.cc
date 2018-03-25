@@ -2,6 +2,7 @@
 #include <sstream>
 #include "BigQ.h"
 
+//Method declarations:
 void *selectFile(void *thread_args);
 void *selectPipe(void *thread_args);
 void *project(void *thread_args);
@@ -11,6 +12,7 @@ void *writeOut(void *thread_args);
 void *groupBy(void *thread_args);
 void insertGroupByRecord(OrderMaker* order_maker, Type type, int intSum,
 		double doubleSum, Record *prev_rec, Pipe* outPipe);
+void *join(void *thread_args);
 
 /*
  * ---------------------------SelectFile----------------------------------------
@@ -430,5 +432,62 @@ void GroupBy::WaitUntilDone() {
 }
 
 void GroupBy::Use_n_Pages(int runlen) {
+	this->runlen = runlen;
+}
+/*
+ * ---------------------------Join----------------------------------------
+ */
+
+void Join::Run(Pipe &inPipeL, Pipe &inPipeR, Pipe &outPipe, CNF &selOp,
+		Record &literal) {
+	relOp_thread_arguments *args = new relOp_thread_arguments;
+	args->inPipe = &inPipeL;
+	args->inPipeR = &inPipeR;
+	args->outPipe = &outPipe;
+	args->selOp = &selOp;
+	args->literal = literal;
+	args->runlen = runlen;
+
+	//spawn the thread and pass the arguments.
+	pthread_create(&thread, NULL, join, (void *) args);
+}
+
+void *join(void *thread_args) {
+	relOp_thread_arguments *args;
+	args = (relOp_thread_arguments *) thread_args;
+	Pipe *inPipeL = args->inPipe;
+	Pipe *inPipeR = args->inPipeR;
+	Pipe *outPipe = args->outPipe;
+	CNF *selOp = args->selOp;
+	Record *literal = args->literal;
+	int runlen = args->runlen;
+
+	OrderMaker left_order_maker;
+	OrderMaker right_order_maker;
+	int numberOfArttrs = selOp->GetSortOrders(left_order_maker,
+			left_order_maker);
+
+	//Do sort merge join.
+	if (numberOfArttrs != 0) {
+		Pipe left_out(outPipe->getBufferSize());
+		Pipe right_out(outPipe->getBufferSize());
+		BigQ left_big_q(*inPipeL, left_out, left_order_maker, runlen / 2);
+		BigQ right_big_q(*inPipeR, right_out, right_order_maker, runlen / 2);
+	}
+//Do block nested loop join.
+	else {
+
+	}
+
+//Shut down output pipe in the end.
+	outPipe->ShutDown();
+	delete args;
+}
+
+void Join::WaitUntilDone() {
+	pthread_join(thread, NULL);
+}
+
+void Join::Use_n_Pages(int runlen) {
 	this->runlen = runlen;
 }

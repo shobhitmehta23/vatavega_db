@@ -30,6 +30,7 @@ typedef struct relOp_thread_arguments {
 	Function* computeMe;
 	int runlen;
 	OrderMaker * orderMaker;
+	Pipe &inPipeR;
 } relOp_thread_arguments;
 
 class SelectFile: public RelationalOp {
@@ -69,14 +70,14 @@ public:
 };
 
 class Join: public RelationalOp {
+private:
+	pthread_t thread;
+	int runlen = 1;
 public:
 	void Run(Pipe &inPipeL, Pipe &inPipeR, Pipe &outPipe, CNF &selOp,
-			Record &literal) {
-	}
-	void WaitUntilDone() {
-	}
-	void Use_n_Pages(int n) {
-	}
+			Record &literal);
+	void WaitUntilDone();
+	void Use_n_Pages(int n);
 };
 
 class DuplicateRemoval: public RelationalOp {
