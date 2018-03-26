@@ -470,14 +470,14 @@ void *join(void *thread_args) {
 	OrderMaker left_order_maker;
 	OrderMaker right_order_maker;
 	int numberOfArttrs = selOp->GetSortOrders(left_order_maker,
-			left_order_maker);
+			right_order_maker);
 
 	//Do sort merge join.
 	if (numberOfArttrs != 0) {
 		Pipe left_out(outPipe->getBufferSize());
 		Pipe right_out(outPipe->getBufferSize());
-		BigQ left_big_q(*inPipeL, left_out, left_order_maker, runlen / 2);
-		BigQ right_big_q(*inPipeR, right_out, right_order_maker, runlen / 2);
+		BigQ left_big_q(*inPipeL, left_out, left_order_maker, runlen);
+		BigQ right_big_q(*inPipeR, right_out, right_order_maker, runlen);
 
 		Record* left = new Record;
 		Record* right = new Record;
