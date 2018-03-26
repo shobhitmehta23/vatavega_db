@@ -15,7 +15,8 @@ void insertGroupByRecord(OrderMaker* order_maker, Type type, int intSum,
 void *join(void *thread_args);
 void sortMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
 		OrderMaker &left_order_maker, OrderMaker &right_order_maker, int runlen,
-		int &creatKeepAttributeArray, int *keepAttributeArray);
+		int &creatKeepAttributeArray, int *keepAttributeArray, CNF *selOp,
+		Record *literal);
 
 /*
  * ---------------------------SelectFile----------------------------------------
@@ -477,11 +478,11 @@ void *join(void *thread_args) {
 	if (numberOfArttrs != 0) {
 		sortMergeJoin(inPipeL, inPipeR, outPipe, left_order_maker,
 				right_order_maker, runlen, creatKeepAttributeArray,
-				keepAttributeArray);
+				keepAttributeArray, selOp, literal);
 	}
 //Do block nested loop join.
 	else {
-
+		ComparisonEngine comp_engine;
 	}
 
 //Shut down output pipe in the end.
@@ -492,7 +493,8 @@ void *join(void *thread_args) {
 
 void sortMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
 		OrderMaker &left_order_maker, OrderMaker &right_order_maker, int runlen,
-		int &creatKeepAttributeArray, int *keepAttributeArray) {
+		int &creatKeepAttributeArray, int *keepAttributeArray, CNF *selOp,
+		Record *literal) {
 
 	ComparisonEngine comp_engine;
 
@@ -550,6 +552,11 @@ void sortMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
 			for (Record * temp_left : left_buffer) {
 				for (Record * temp_right : right_buffer) {
 					//code to create a merged record and insert it in the out pipe
+
+					if (comp_engine.Compare(temp_left, temp_right, literal,
+							selOp) == 0) {
+						continue;
+					}
 
 					Record *out_rec = new Record;
 					int numAttLeft = temp_left->getNumberofAttributes();
