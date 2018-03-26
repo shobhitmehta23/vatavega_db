@@ -445,7 +445,7 @@ void Join::Run(Pipe &inPipeL, Pipe &inPipeR, Pipe &outPipe, CNF &selOp,
 	args->inPipeR = &inPipeR;
 	args->outPipe = &outPipe;
 	args->selOp = &selOp;
-	args->literal = literal;
+	args->literal = &literal;
 	args->runlen = runlen;
 
 	//spawn the thread and pass the arguments.
@@ -462,6 +462,11 @@ void *join(void *thread_args) {
 	Record *literal = args->literal;
 	int runlen = args->runlen;
 
+	int creatKeepAttributeArray = 1;
+	int *keepAttributeArray;
+
+	ComparisonEngine comp_engine;
+
 	OrderMaker left_order_maker;
 	OrderMaker right_order_maker;
 	int numberOfArttrs = selOp->GetSortOrders(left_order_maker,
@@ -473,6 +478,90 @@ void *join(void *thread_args) {
 		Pipe right_out(outPipe->getBufferSize());
 		BigQ left_big_q(*inPipeL, left_out, left_order_maker, runlen / 2);
 		BigQ right_big_q(*inPipeR, right_out, right_order_maker, runlen / 2);
+
+		Record* left = new Record;
+		Record* right = new Record;
+
+		int left_has_records = left_out.Remove(left);
+		int right_has_records = right_out.Remove(right);
+
+		while (left_has_records && right_has_records) {
+			int equals = comp_engine.Compare(left, &left_order_maker, right,
+					&right_order_maker);
+			if (equals < 0) {
+				left_has_records = left_out.Remove(left);
+			} else if (equals > 0) {
+				right_has_records = right_out.Remove(right);
+			} else {
+				//nested join for equal records
+				vector<Record *> left_buffer;
+				vector<Record *> right_buffer;
+
+				Record *temp_left = new Record;
+
+				while (left_has_records = left_out.Remove(temp_left)) {
+					if (comp_engine.Compare(left, temp_left,
+							&left_order_maker)) {
+						left_buffer.push_back(left);
+						left = temp_left;
+						break;
+					} else {
+						left_buffer.push_back(temp_left);
+						temp_left = new Record;
+					}
+
+				}
+
+				Record *temp_right = new Record;
+
+				while (right_has_records = right_out.Remove(temp_right)) {
+					if (comp_engine.Compare(right, temp_right,
+							&right_order_maker)) {
+						right_buffer.push_back(right);
+						right = temp_right;
+						break;
+					} else {
+						right_buffer.push_back(temp_right);
+						temp_right = new Record;
+					}
+				}
+
+				for (Record * temp_left : left_buffer) {
+					for (Record * temp_right : right_buffer) {
+						//code to create a merged record and insert it in the out pipe
+
+						Record *out_rec = new Record;
+						int numAttLeft = temp_left->getNumberofAttributes();
+						int numAttRight = temp_right->getNumberofAttributes();
+
+						if (creatKeepAttributeArray) {
+
+							creatKeepAttributeArray = 0;
+							keepAttributeArray = new int[numAttLeft
+									+ numAttRight];
+
+							for (int i = 0; i < numAttLeft; i++) {
+								keepAttributeArray[i] = i;
+							}
+
+							for (int i = numAttLeft;
+									i < (numAttLeft + numAttRight); i++) {
+								keepAttributeArray[i] = i - numAttLeft;
+							}
+						}
+
+						out_rec->MergeRecords(temp_left, temp_right, numAttLeft,
+								numAttRight, keepAttributeArray,
+								(numAttLeft + numAttRight), numAttLeft);
+
+						delete temp_right;
+
+						outPipe->Insert(out_rec);
+					}
+					delete temp_left;
+				}
+			}
+		}
 	}
 //Do block nested loop join.
 	else {
@@ -481,6 +570,7 @@ void *join(void *thread_args) {
 
 //Shut down output pipe in the end.
 	outPipe->ShutDown();
+	delete keepAttributeArray;
 	delete args;
 }
 

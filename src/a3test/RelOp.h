@@ -30,7 +30,7 @@ typedef struct relOp_thread_arguments {
 	Function* computeMe;
 	int runlen;
 	OrderMaker * orderMaker;
-	Pipe &inPipeR;
+	Pipe *inPipeR;
 } relOp_thread_arguments;
 
 class SelectFile: public RelationalOp {

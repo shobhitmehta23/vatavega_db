@@ -514,7 +514,11 @@ void Record :: Print (Schema *mySchema, FILE * file) {
 	fprintf(file, "\n");
 }
 
-int Record :: get_record_size() const {
-	return ((int *)bits)[0];
+int Record::get_record_size() const {
+	return ((int *) bits)[0];
+}
+
+int Record::getNumberofAttributes() {
+	return (((int *) bits)[1] / sizeof(int)) - 1;
 }
 

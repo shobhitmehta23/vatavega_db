@@ -75,6 +75,9 @@ public:
 
 	// returns the size of records in bytes
 	int get_record_size() const;
+
+	//returns number of attributes in the record.
+	int getNumberofAttributes();
 };
 
 #endif
