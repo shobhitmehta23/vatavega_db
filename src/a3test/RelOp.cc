@@ -15,15 +15,12 @@ void insertGroupByRecord(OrderMaker* order_maker, Type type, int intSum,
 void *join(void *thread_args);
 void sortMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
 		OrderMaker &left_order_maker, OrderMaker &right_order_maker, int runlen,
-		int &creatKeepAttributeArray, int *keepAttributeArray, CNF *selOp,
+		CNF *selOp, Record *literal);
+void blockMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe, CNF *selOp,
 		Record *literal);
-void blockMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
-		OrderMaker &left_order_maker, OrderMaker &right_order_maker, int runlen,
-		int &creatKeepAttributeArray, int *keepAttributeArray, CNF *selOp,
-		Record *literal);
-void mergeTwoRecords(Record* temp_left, Record* temp_right,
-		int &creatKeepAttributeArray, int* keepAttributeArray, int numAttLeft,
-		int numAttRight, Pipe *outPipe);
+void mergeAndAddRecordsToPipe(Record* temp_left, Record* temp_right,
+		int* keepAttributeArray, int numAttLeft, int numAttRight,
+		Pipe *outPipe);
 
 /*
  * ---------------------------SelectFile----------------------------------------
@@ -473,9 +470,6 @@ void *join(void *thread_args) {
 	Record *literal = args->literal;
 	int runlen = args->runlen;
 
-	int creatKeepAttributeArray = 1;
-	int *keepAttributeArray;
-
 	OrderMaker left_order_maker;
 	OrderMaker right_order_maker;
 	int numberOfArttrs = selOp->GetSortOrders(left_order_maker,
@@ -484,46 +478,21 @@ void *join(void *thread_args) {
 	//Do sort merge join.
 	if (numberOfArttrs != 0) {
 		sortMergeJoin(inPipeL, inPipeR, outPipe, left_order_maker,
-				right_order_maker, runlen, creatKeepAttributeArray,
-				keepAttributeArray, selOp, literal);
+				right_order_maker, runlen, selOp, literal);
 	}
 //Do block nested loop join.
 	else {
-		ComparisonEngine comp_engine;
-
-		DBFile temp_dbfile;
-		char * temp_dbfile_name = (char*) malloc(20 * sizeof(char));
-		sprintf(temp_dbfile_name, "temp_db_%d", rand() % 1000);
-		temp_dbfile.Create(temp_dbfile_name, heap, NULL);
-
-		Record *temp_record = new Record;
-		while (inPipeR->Remove(temp_record)) {
-			temp_dbfile.Add(*temp_record);
-		}
-
-		while (inPipeL->Remove(temp_record)) {
-			temp_dbfile.MoveFirst();
-
-			Record *temp_right_record = new Record;
-			while (temp_dbfile.GetNext(*temp_right_record)) {
-				if (comp_engine.Compare(temp_record, temp_right_record, literal,
-						selOp)) {
-
-				}
-			}
-		}
+		blockMergeJoin(inPipeL, inPipeR, outPipe, selOp, literal);
 	}
 
 //Shut down output pipe in the end.
 	outPipe->ShutDown();
-	delete keepAttributeArray;
 	delete args;
 }
 
 void sortMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
 		OrderMaker &left_order_maker, OrderMaker &right_order_maker, int runlen,
-		int &creatKeepAttributeArray, int *keepAttributeArray, CNF *selOp,
-		Record *literal) {
+		CNF *selOp, Record *literal) {
 
 	ComparisonEngine comp_engine;
 
@@ -537,6 +506,9 @@ void sortMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
 
 	int left_has_records = left_out.Remove(left);
 	int right_has_records = right_out.Remove(right);
+
+	int creatKeepAttributeArray = 1;
+	int * keepAttributeArray;
 
 	while (left_has_records && right_has_records) {
 		int equals = comp_engine.Compare(left, &left_order_maker, right,
@@ -564,6 +536,10 @@ void sortMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
 
 			}
 
+			if (left_has_records == 0) {
+				left_buffer.push_back(left);
+			}
+
 			Record *temp_right = new Record;
 
 			while (right_has_records = right_out.Remove(temp_right)) {
@@ -576,6 +552,10 @@ void sortMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
 					right_buffer.push_back(temp_right);
 					temp_right = new Record;
 				}
+			}
+
+			if (right_has_records == 0) {
+				right_buffer.push_back(right);
 			}
 
 			for (Record * temp_left : left_buffer) {
@@ -605,9 +585,9 @@ void sortMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
 						}
 					}
 
-					mergeTwoRecords(temp_left, temp_right,
-							creatKeepAttributeArray, keepAttributeArray,
-							numAttLeft, numAttRight, outPipe);
+					mergeAndAddRecordsToPipe(temp_left, temp_right,
+							keepAttributeArray, numAttLeft, numAttRight,
+							outPipe);
 
 					delete temp_right;
 
@@ -616,13 +596,71 @@ void sortMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
 			}
 		}
 	}
+	delete keepAttributeArray;
+}
+
+void blockMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe, CNF *selOp,
+		Record *literal) {
+
+	ComparisonEngine comp_engine;
+	int creatKeepAttributeArray = 1;
+	int *keepAttributeArray;
+
+	DBFile temp_dbfile;
+	char * temp_dbfile_name = (char*) malloc(20 * sizeof(char));
+	sprintf(temp_dbfile_name, "temp_db_%d", rand() % 1000);
+	temp_dbfile.Create(temp_dbfile_name, heap, NULL);
+
+	Record *temp_record = new Record;
+	while (inPipeR->Remove(temp_record)) {
+		temp_dbfile.Add(*temp_record);
+	}
+
+	while (inPipeL->Remove(temp_record)) {
+		temp_dbfile.MoveFirst();
+
+		Record *temp_right_record = new Record;
+		while (temp_dbfile.GetNext(*temp_right_record)) {
+			if (comp_engine.Compare(temp_record, temp_right_record, literal,
+					selOp)) {
+				int numAttLeft = temp_record->getNumberofAttributes();
+				int numAttRight = temp_right_record->getNumberofAttributes();
+
+				if (creatKeepAttributeArray) {
+
+					creatKeepAttributeArray = 0;
+					keepAttributeArray = new int[numAttLeft + numAttRight];
+
+					for (int i = 0; i < numAttLeft; i++) {
+						keepAttributeArray[i] = i;
+					}
+
+					for (int i = numAttLeft; i < (numAttLeft + numAttRight);
+							i++) {
+						keepAttributeArray[i] = i - numAttLeft;
+					}
+				}
+
+				mergeAndAddRecordsToPipe(temp_record, temp_right_record,
+						keepAttributeArray, numAttLeft, numAttRight, outPipe);
+			}
+		}
+		delete temp_right_record;
+	}
+
+	delete temp_record;
+
+	std::remove(temp_dbfile_name);
+	free(temp_dbfile_name);
+
+	delete keepAttributeArray;
 
 }
 
 //merges the left and right records and writes to the out pipe
-void mergeTwoRecords(Record* temp_left, Record* temp_right,
-		int &creatKeepAttributeArray, int* keepAttributeArray, int numAttLeft,
-		int numAttRight, Pipe *outPipe) {
+void mergeAndAddRecordsToPipe(Record* temp_left, Record* temp_right,
+		int* keepAttributeArray, int numAttLeft, int numAttRight,
+		Pipe *outPipe) {
 
 	Record *out_rec = new Record;
 
