@@ -17,6 +17,13 @@ void sortMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
 		OrderMaker &left_order_maker, OrderMaker &right_order_maker, int runlen,
 		int &creatKeepAttributeArray, int *keepAttributeArray, CNF *selOp,
 		Record *literal);
+void blockMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
+		OrderMaker &left_order_maker, OrderMaker &right_order_maker, int runlen,
+		int &creatKeepAttributeArray, int *keepAttributeArray, CNF *selOp,
+		Record *literal);
+void mergeTwoRecords(Record* temp_left, Record* temp_right,
+		int &creatKeepAttributeArray, int* keepAttributeArray, int numAttLeft,
+		int numAttRight, Pipe *outPipe);
 
 /*
  * ---------------------------SelectFile----------------------------------------
@@ -483,6 +490,28 @@ void *join(void *thread_args) {
 //Do block nested loop join.
 	else {
 		ComparisonEngine comp_engine;
+
+		DBFile temp_dbfile;
+		char * temp_dbfile_name = (char*) malloc(20 * sizeof(char));
+		sprintf(temp_dbfile_name, "temp_db_%d", rand() % 1000);
+		temp_dbfile.Create(temp_dbfile_name, heap, NULL);
+
+		Record *temp_record = new Record;
+		while (inPipeR->Remove(temp_record)) {
+			temp_dbfile.Add(*temp_record);
+		}
+
+		while (inPipeL->Remove(temp_record)) {
+			temp_dbfile.MoveFirst();
+
+			Record *temp_right_record = new Record;
+			while (temp_dbfile.GetNext(*temp_right_record)) {
+				if (comp_engine.Compare(temp_record, temp_right_record, literal,
+						selOp)) {
+
+				}
+			}
+		}
 	}
 
 //Shut down output pipe in the end.
@@ -558,38 +587,46 @@ void sortMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
 						continue;
 					}
 
-					Record *out_rec = new Record;
 					int numAttLeft = temp_left->getNumberofAttributes();
 					int numAttRight = temp_right->getNumberofAttributes();
 
-					if (creatKeepAttributeArray) {
-
-						creatKeepAttributeArray = 0;
-						keepAttributeArray = new int[numAttLeft + numAttRight];
-
-						for (int i = 0; i < numAttLeft; i++) {
-							keepAttributeArray[i] = i;
-						}
-
-						for (int i = numAttLeft; i < (numAttLeft + numAttRight);
-								i++) {
-							keepAttributeArray[i] = i - numAttLeft;
-						}
-					}
-
-					out_rec->MergeRecords(temp_left, temp_right, numAttLeft,
-							numAttRight, keepAttributeArray,
-							(numAttLeft + numAttRight), numAttLeft);
+					mergeTwoRecords(temp_left, temp_right,
+							creatKeepAttributeArray, keepAttributeArray,
+							numAttLeft, numAttRight, outPipe);
 
 					delete temp_right;
 
-					outPipe->Insert(out_rec);
 				}
 				delete temp_left;
 			}
 		}
 	}
 
+}
+
+//merges the left and right records and writes to the out pipe
+void mergeTwoRecords(Record* temp_left, Record* temp_right,
+		int &creatKeepAttributeArray, int* keepAttributeArray, int numAttLeft,
+		int numAttRight, Pipe *outPipe) {
+	if (creatKeepAttributeArray) {
+
+		creatKeepAttributeArray = 0;
+		keepAttributeArray = new int[numAttLeft + numAttRight];
+
+		for (int i = 0; i < numAttLeft; i++) {
+			keepAttributeArray[i] = i;
+		}
+
+		for (int i = numAttLeft; i < (numAttLeft + numAttRight); i++) {
+			keepAttributeArray[i] = i - numAttLeft;
+		}
+	}
+
+	Record *out_rec = new Record;
+
+	out_rec->MergeRecords(temp_left, temp_right, numAttLeft, numAttRight,
+			keepAttributeArray, (numAttLeft + numAttRight), numAttLeft);
+	outPipe->Insert(out_rec);
 }
 
 void Join::WaitUntilDone() {
