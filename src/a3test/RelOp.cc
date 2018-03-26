@@ -590,6 +590,21 @@ void sortMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
 					int numAttLeft = temp_left->getNumberofAttributes();
 					int numAttRight = temp_right->getNumberofAttributes();
 
+					if (creatKeepAttributeArray) {
+
+						creatKeepAttributeArray = 0;
+						keepAttributeArray = new int[numAttLeft + numAttRight];
+
+						for (int i = 0; i < numAttLeft; i++) {
+							keepAttributeArray[i] = i;
+						}
+
+						for (int i = numAttLeft; i < (numAttLeft + numAttRight);
+								i++) {
+							keepAttributeArray[i] = i - numAttLeft;
+						}
+					}
+
 					mergeTwoRecords(temp_left, temp_right,
 							creatKeepAttributeArray, keepAttributeArray,
 							numAttLeft, numAttRight, outPipe);
@@ -608,19 +623,6 @@ void sortMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
 void mergeTwoRecords(Record* temp_left, Record* temp_right,
 		int &creatKeepAttributeArray, int* keepAttributeArray, int numAttLeft,
 		int numAttRight, Pipe *outPipe) {
-	if (creatKeepAttributeArray) {
-
-		creatKeepAttributeArray = 0;
-		keepAttributeArray = new int[numAttLeft + numAttRight];
-
-		for (int i = 0; i < numAttLeft; i++) {
-			keepAttributeArray[i] = i;
-		}
-
-		for (int i = numAttLeft; i < (numAttLeft + numAttRight); i++) {
-			keepAttributeArray[i] = i - numAttLeft;
-		}
-	}
 
 	Record *out_rec = new Record;
 
