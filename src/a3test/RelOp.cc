@@ -1,6 +1,7 @@
 #include "RelOp.h"
 #include <sstream>
 #include "BigQ.h"
+#include <string.h>
 
 //Method declarations:
 void *selectFile(void *thread_args);

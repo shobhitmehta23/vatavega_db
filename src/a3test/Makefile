@@ -66,7 +66,7 @@ Function.o: Function.cc
 	$(CC) -g -c Function.cc
 
 File.o: File.cc
-	$(CC) -g -c File.cc
+	$(CC) -g -c -fpermissive File.cc
 
 Record.o: Record.cc
 	$(CC) -g -c Record.cc
