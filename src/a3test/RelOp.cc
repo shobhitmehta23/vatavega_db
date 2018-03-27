@@ -616,6 +616,9 @@ void blockMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe, CNF *selOp,
 		temp_dbfile.Add(*temp_record);
 	}
 
+	//temp_dbfile.Close();
+	//temp_dbfile.Open(temp_dbfile_name);
+
 	while (inPipeL->Remove(temp_record)) {
 		temp_dbfile.MoveFirst();
 
@@ -650,6 +653,10 @@ void blockMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe, CNF *selOp,
 
 	delete temp_record;
 
+	temp_dbfile.Close();
+
+	std::remove(temp_dbfile_name);
+	temp_dbfile_name = strcat(temp_dbfile_name,".meta");
 	std::remove(temp_dbfile_name);
 	free(temp_dbfile_name);
 
