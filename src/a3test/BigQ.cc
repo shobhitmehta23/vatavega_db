@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include "Comparison.h"
 #include "Defs.h"
+#include <time.h>
 
 using namespace std;
 
@@ -26,8 +27,8 @@ BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
 	args->out = &out;
 	args->sortorder = &sortorder;
 	args->runlen = runlen;
-	args->filename= (char*)malloc(20 * sizeof(char));
-	sprintf(args->filename, "meta_data_%d", rand()%1000);
+	args->filename= (char*)malloc(L_tmpnam * sizeof(char));
+	tmpnam(args->filename);
 	args->runCount = 0;
 	pthread_t thread;
 
