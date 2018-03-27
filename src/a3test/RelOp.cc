@@ -2,7 +2,6 @@
 #include <sstream>
 #include "BigQ.h"
 #include <string.h>
-#include <atomic>
 
 //Method declarations:
 void *selectFile(void *thread_args);
@@ -610,8 +609,7 @@ void blockMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe, CNF *selOp,
 
 	DBFile temp_dbfile;
 	char * temp_dbfile_name = (char*) malloc(20 * sizeof(char));
-	static std::atomic_int count;
-	sprintf(temp_dbfile_name, "temp_db_%d%d", rand() % 1000, count++);
+	sprintf(temp_dbfile_name, "temp_db_%d", rand() % 1000);
 	temp_dbfile.Create(temp_dbfile_name, heap, NULL);
 
 	Record *temp_record = new Record;
