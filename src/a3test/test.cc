@@ -186,10 +186,11 @@ void q4() {
 	Pipe _s_ps(pipesz);
 	CNF cnf_p_ps;
 	Record lit_p_ps;
-	/*get_cnf("(s_suppkey = ps_suppkey)", s->schema(), ps->schema(), cnf_p_ps,
-			lit_p_ps);*/
-	get_cnf("(s_suppkey < 4) AND (s_suppkey > ps_partkey)", s->schema(), ps->schema(), cnf_p_ps,
-				lit_p_ps);
+	get_cnf("(s_suppkey = ps_suppkey)", s->schema(), ps->schema(), cnf_p_ps,
+			lit_p_ps);
+	/* another join query to test block join
+	 * get_cnf("(s_suppkey < 4) AND (s_suppkey > ps_partkey)", s->schema(), ps->schema(), cnf_p_ps,
+				lit_p_ps);*/
 
 	int outAtts = sAtts + psAtts;
 	Attribute ps_supplycost = { "ps_supplycost", Double };
