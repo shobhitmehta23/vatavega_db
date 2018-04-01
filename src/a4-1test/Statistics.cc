@@ -11,9 +11,16 @@ Statistics::~Statistics()
 {
 }
 
-void Statistics::AddRel(char *relName, int numTuples)
-{
+void Statistics::AddRel(char *relName, int numTuples) {
+	string rel_name(relName);
+	set<string> temp_set;
+	temp_set.insert(rel_name);
+
+	TableInfo table_info(numTuples);
+	table_set_look_up_map[rel_name] = temp_set;
+	table_map[temp_set] = table_info;
 }
+
 void Statistics::AddAtt(char *relName, char *attName, int numDistincts)
 {
 }
@@ -43,4 +50,8 @@ AttributeInfo::AttributeInfo(char *attribute_name, int distinct_count) {
 
 bool AttributeInfo::operator==(const AttributeInfo &other_attribute) {
 	return this->attribute_name.compare(other_attribute.attribute_name) == 0;
+}
+
+TableInfo::TableInfo(int no_of_tuples) {
+		this->no_of_tuples = no_of_tuples;
 }
