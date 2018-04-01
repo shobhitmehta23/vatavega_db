@@ -1,4 +1,5 @@
 #include "Statistics.h"
+#include <cstring>
 
 Statistics::Statistics()
 {
@@ -34,3 +35,12 @@ double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numT
 {
 }
 
+
+AttributeInfo::AttributeInfo(char *attribute_name, int distinct_count) {
+	this->attribute_name.assign(attribute_name);
+	this->distinct_count = distinct_count;
+}
+
+bool AttributeInfo::operator==(const AttributeInfo &other_attribute) {
+	return this->attribute_name.compare(other_attribute.attribute_name) == 0;
+}
