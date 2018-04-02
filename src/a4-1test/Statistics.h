@@ -22,8 +22,10 @@ public:
 class TableInfo {
 public:
 	int no_of_tuples;
+	set<string> table_set;
 	unordered_map<string, AttributeInfo> attributes;
-	TableInfo(int no_of_tuples);
+	TableInfo() {};
+	TableInfo(int no_of_tuples, set<string> table_set);
 };
 
 struct SetHasher {

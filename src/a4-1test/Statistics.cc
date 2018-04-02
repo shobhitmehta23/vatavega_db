@@ -52,6 +52,7 @@ bool AttributeInfo::operator==(const AttributeInfo &other_attribute) {
 	return this->attribute_name.compare(other_attribute.attribute_name) == 0;
 }
 
-TableInfo::TableInfo(int no_of_tuples) {
+TableInfo::TableInfo(int no_of_tuples, set<string> table_set) {
 		this->no_of_tuples = no_of_tuples;
+		this->table_set = table_set;
 }
