@@ -561,7 +561,51 @@ void q11 (){
 	
 }
 
+void hijack() {
+
+	char relation_name[2][10] = {
+			"Employee",
+			"Company",
+	};
+
+	char employee_att[2][10] = {
+			"emp_id",
+			"emp_name"
+	};
+
+	char company_att[2][10] = {
+			"comp_id",
+			"comp_name"
+	};
+
+	char *fileN = "/Users/shobhit/Documents/cpp_workspace/vatavega_db/src/a4-1test/example.txt";
+	char *fileN2 = "/Users/shobhit/Documents/cpp_workspace/vatavega_db/src/a4-1test/example2.txt";
+	char *fileN3 = "/Users/shobhit/Documents/cpp_workspace/vatavega_db/src/a4-1test/example3.txt";
+
+	Statistics s;
+	s.AddRel(relation_name[0], 10);
+	s.AddRel(relation_name[1], 4);
+	s.AddAtt(relation_name[0], employee_att[0], 10);
+	s.AddAtt(relation_name[0], employee_att[1], 6);
+	s.AddAtt(relation_name[1], company_att[0], 4);
+	s.AddAtt(relation_name[1], company_att[1], 4);
+	//s.Write(fileN);
+
+	/*s.Read(fileN);
+	s.Write(fileN2);*/
+
+	/*Statistics s2(s);
+	s2.CopyRel(relation_name[0], "Employee_Duplicate");
+	s2.Write(fileN3);*/
+
+
+}
+
+
 int main(int argc, char *argv[]) {
+
+	// hijack();
+
 	if (argc < 2) {
 		cerr << "You need to supply me the query number to run as a command-line arg.." << endl;
 		cerr << "Usage: ./test.out [0-11] >" << endl;

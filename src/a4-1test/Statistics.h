@@ -5,46 +5,76 @@
 #include <string>
 #include <unordered_map>
 #include <set>
+#include <fstream>
+#include <iostream>
 
 
 using namespace std;
-
-class AttributeInfo {
-public:
-	string attribute_name;
-	int distinct_count;
-
-	AttributeInfo(char *attribute_name, int distinct_count);
-	bool operator==(const AttributeInfo &other_attribute);
-};
-
 
 class TableInfo {
 public:
 	int no_of_tuples;
 	set<string> table_set;
-	unordered_map<string, AttributeInfo> attributes;
-	TableInfo() {};
+	unordered_map<string, long> attributes;
 	TableInfo(int no_of_tuples, set<string> table_set);
-};
+	TableInfo() {};
+	~TableInfo() {};
 
-struct SetHasher {
-  std::size_t operator()(const std::set<string>& k) const {
-	string temp = "";
+	friend ostream &operator<<(ostream &output, const TableInfo &table_info) {
+		// no of tuples
+		output << table_info.no_of_tuples << endl;
 
-    for (auto x: k) {
-    		temp += x;
-    }
+		// table set
+		int table_set_size = table_info.table_set.size();
+		output << table_set_size << endl;
+		for (auto x : table_info.table_set) {
+			output << x << endl;
+		}
 
-    return hash<string>()(temp);
-  }
+		// attribute map
+		int att_map_size = table_info.attributes.size();
+		output << att_map_size << endl;
+		for (auto x : table_info.attributes) {
+			output << x.first << endl;
+			output << x.second << endl;
+		}
+		return output;
+	}
+
+	friend istream & operator >> (istream &input,  TableInfo &table_info)
+	{
+	    input >> table_info.no_of_tuples;
+
+	    int table_set_size;
+	    input >> table_set_size;
+	    for (int i = 0; i < table_set_size; i++) {
+	    		string temp;
+	    		input >> temp;
+	    		table_info.table_set.insert(temp);
+	    }
+
+	    int att_map_size;
+	    input >> att_map_size;
+	    for (int i = 0; i < att_map_size; i++) {
+	    		string attribute_name;
+	    		int distinct_count;
+
+	    		input >> attribute_name;
+	    		input >> distinct_count;
+
+	    		table_info.attributes[attribute_name] = distinct_count;
+	    }
+
+	    return input;
+	}
 };
 
 class Statistics {
 
 private:
-	unordered_map<set<string>, TableInfo, SetHasher> table_map;
-	unordered_map<string, set<string>> table_set_look_up_map;
+	unordered_map<int, TableInfo *> group_to_table_info_map;
+	unordered_map<string, int> relation_to_group_map;
+	int group_no = 1;
 
 public:
 	Statistics();
@@ -61,7 +91,6 @@ public:
 
 	void  Apply(struct AndList *parseTree, char *relNames[], int numToJoin);
 	double Estimate(struct AndList *parseTree, char **relNames, int numToJoin);
-
 };
 
 #endif
