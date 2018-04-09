@@ -4,8 +4,9 @@
 #include <fstream>
 #include <iostream>
 
-string remove_relation_name_from_qualified_attribute_name (string qualified_attribute_name, string relation_name);
-string convert_to_qualified_name (string attribute_name, string relation_name);
+string remove_relation_name_from_qualified_attribute_name(
+		string qualified_attribute_name, string relation_name);
+string convert_to_qualified_name(string attribute_name, string relation_name);
 bool is_qualified_name(string attribute_name);
 
 using namespace std;
@@ -44,7 +45,8 @@ void Statistics::AddAtt(char *relName, char *attName, int numDistincts) {
 
 	int grp_no = relation_to_group_map[rel_name];
 	TableInfo * table_info = group_to_table_info_map[grp_no];
-	table_info->attributes[att_name] = (numDistincts == -1? table_info->no_of_tuples : numDistincts);
+	table_info->attributes[att_name] = (
+			numDistincts == -1 ? table_info->no_of_tuples : numDistincts);
 }
 
 void Statistics::CopyRel(char *oldName, char *newName) {
@@ -57,12 +59,13 @@ void Statistics::CopyRel(char *oldName, char *newName) {
 
 	auto old_attribute_map = old_table_info->attributes;
 	for (auto attribute : old_attribute_map) {
-		string new_att_name = remove_relation_name_from_qualified_attribute_name(attribute.first,
-				old_name);
-		this->AddAtt(newName, (char *)new_att_name.c_str(), attribute.second);
+		string new_att_name =
+				remove_relation_name_from_qualified_attribute_name(
+						attribute.first, old_name);
+		this->AddAtt(newName, (char *) new_att_name.c_str(), attribute.second);
 	}
 }
-	
+
 void Statistics::Read(char *fromWhere) {
 	ifstream meta_data_file;
 	meta_data_file.open(fromWhere);
@@ -88,7 +91,7 @@ void Statistics::Read(char *fromWhere) {
 	int relation_to_group_map_size;
 	meta_data_file >> relation_to_group_map_size;
 
-	for (int i = 0; i< relation_to_group_map_size; i++) {
+	for (int i = 0; i < relation_to_group_map_size; i++) {
 		string relation;
 		int group_no;
 
@@ -127,21 +130,69 @@ void Statistics::Write(char *fromWhere) {
 	meta_data_file.close();
 }
 
-
-set<TableInfo *>Statistics::checkIfRelationsJoinedSatisfyConstraints(string rel_names[], int numToJoin) {
+set<TableInfo *> Statistics::checkIfRelationsJoinedSatisfyConstraints(
+		string rel_names[], int numToJoin) {
 	set<TableInfo *> temp;
 	return temp;
 }
 
-void  Statistics::Apply(struct AndList *parseTree, char *relNames[], int numToJoin) {
+void Statistics::Apply(struct AndList *parseTree, char *relNames[],
+		int numToJoin) {
 	string rel_names[numToJoin];
 
 	for (int i = 0; i < numToJoin; i++) {
 		rel_names[i] = string(relNames[i]);
 	}
+
+	set<TableInfo *> tableInfos = checkIfRelationsJoinedSatisfyConstraints(
+			rel_names, numToJoin);
+
+	while (parseTree) {
+		OrList *orList = parseTree->left;
+
+		while (orList) {
+			ComparisonOp* cmp = orList->left;
+			if (cmp) {
+				int code = cmp->code;
+				Operand *op1 = cmp->left;
+				Operand *op2 = cmp->right;
+
+				if (op1->code == NAME) {
+
+				}
+
+				if (op2->code == NAME) {
+
+				}
+
+				switch (code) {
+				case EQUALS:
+					//check if it is a join or selection
+					//1) join
+					if (op1->code == NAME && op2->code == NAME) {
+
+					}
+					//2) selection
+					else {
+
+					}
+					break;
+				case LESS_THAN:
+				case GREATER_THAN:
+					break;
+
+				}
+			}
+
+			orList = orList->rightOr;
+		}
+
+		parseTree = parseTree->rightAnd;
+	}
 }
 
-double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numToJoin) {
+double Statistics::Estimate(struct AndList *parseTree, char **relNames,
+		int numToJoin) {
 	Statistics s(*this);
 	s.Apply(parseTree, relNames, numToJoin);
 	return s.getRowsinJoinedTableContainingGivenRelation(string(relNames[0]));
@@ -154,16 +205,17 @@ double Statistics::getRowsinJoinedTableContainingGivenRelation(string relName) {
 }
 
 TableInfo::TableInfo(int no_of_tuples, set<string> table_set) {
-		this->no_of_tuples = no_of_tuples;
-		this->table_set = table_set;
+	this->no_of_tuples = no_of_tuples;
+	this->table_set = table_set;
 }
 
-string remove_relation_name_from_qualified_attribute_name (string qualified_attribute_name,
-		string relation_name) {
-	return qualified_attribute_name.substr(relation_name.length() + 1, relation_name.npos);
+string remove_relation_name_from_qualified_attribute_name(
+		string qualified_attribute_name, string relation_name) {
+	return qualified_attribute_name.substr(relation_name.length() + 1,
+			relation_name.npos);
 }
 
-string convert_to_qualified_name (string attribute_name, string relation_name) {
+string convert_to_qualified_name(string attribute_name, string relation_name) {
 	return relation_name.append(".").append(attribute_name);
 }
 
