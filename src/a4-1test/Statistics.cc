@@ -163,8 +163,8 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 		rel_names[i] = string(relNames[i]);
 	}
 
-	set<TableInfo *> tableInfos = checkIfRelationsJoinedSatisfyConstraints(
-			rel_names, numToJoin);
+	set<int> groupIds = checkIfRelationsJoinedSatisfyConstraints(rel_names,
+			numToJoin);
 
 	while (parseTree) {
 		OrList *orList = parseTree->left;
