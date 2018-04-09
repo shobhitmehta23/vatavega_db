@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 string remove_relation_name_from_qualified_attribute_name(
 		string qualified_attribute_name, string relation_name);
@@ -175,36 +176,89 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 				int code = cmp->code;
 				Operand *op1 = cmp->left;
 				Operand *op2 = cmp->right;
+				TableInfo* tb1 = NULL;
+				TableInfo* tb2 = NULL;
+				string rel_name1;
+				string rel_name2;
 
 				if (op1->code == NAME) {
-					checkIfAttributeExistsInGivenRelations(groupIds, op1);
+					tb1 = checkIfAttributeExistsInGivenRelations(groupIds, op1,
+							rel_name1);
 				}
 				if (op2->code == NAME) {
-					checkIfAttributeExistsInGivenRelations(groupIds, op2);
+					tb2 = checkIfAttributeExistsInGivenRelations(groupIds, op2,
+							rel_name2);
 				}
-
+				vector<TableInfo*> tableInfos;
 				switch (code) {
 				case EQUALS:
 					//check if it is a join or selection
 					//1) join
 					if (op1->code == NAME && op2->code == NAME) {
+						int distValL =
+								tb1->attributes[convert_to_qualified_name(
+										string(op1->value), rel_name1)];
+						int distValR =
+								tb2->attributes[convert_to_qualified_name(
+										string(op2->value), rel_name2)];
+						int tupPerValL = tb1->no_of_tuples / distValL;
+						int tupPerValR = tb2->no_of_tuples / distValR;
+						int minDistValue = std::min(distValL, distValR);
+
+						double newNumOfTuples = (tupPerValL * tupPerValR
+								* minDistValue);
+
+						TableInfo * newTableInfo = new TableInfo();
+						//newTableInfo->
 
 					}
 					//2) selection
 					else {
+						TableInfo* tbInfo;
+						string* rel_name;
+						Operand * op;
+						if (op1->code == NAME) {
+							tbInfo = tb1;
+							rel_name = &rel_name1;
+							op = op1;
+						} else {
+							tbInfo = tb2;
+							rel_name = &rel_name2;
+							op = op2;
+						}
+
+						double newNumOfTuples = tbInfo->no_of_tuples
+								/ tbInfo->attributes[convert_to_qualified_name(
+										string(op->value), rel_name2)];
 
 					}
 					break;
 				case LESS_THAN:
 				case GREATER_THAN:
+
+					TableInfo* tbInfo;
+					string* rel_name;
+					Operand * op;
+					if (op1->code == NAME) {
+						tbInfo = tb1;
+						rel_name = &rel_name1;
+						op = op1;
+					} else {
+						tbInfo = tb2;
+						rel_name = &rel_name2;
+						op = op2;
+					}
+
+					double newNumOfTuples = tbInfo->no_of_tuples / 3.0;
 					break;
 
 				}
-			}
 
+			}
+			//TODO Combine the results of OR if mupltiple OR conditions.
 			orList = orList->rightOr;
 		}
-
+		//TODO Update the state for next and.
 		parseTree = parseTree->rightAnd;
 	}
 }
@@ -246,9 +300,9 @@ bool is_qualified_name(string attribute_name) {
 	return true;
 }
 
-void Statistics::checkIfAttributeExistsInGivenRelations(set<int> groupIds,
-		Operand* op) {
-	bool found = false;
+TableInfo* Statistics::checkIfAttributeExistsInGivenRelations(set<int> groupIds,
+		Operand* op, string &relation) {
+	//bool found = false;
 	for (int groupId : groupIds) {
 		TableInfo* tb = group_to_table_info_map[groupId];
 
@@ -256,22 +310,18 @@ void Statistics::checkIfAttributeExistsInGivenRelations(set<int> groupIds,
 			auto it = tb->attributes.find(
 					convert_to_qualified_name(string(op->value), rel_name));
 			if (!(it == tb->attributes.end())) {
-				found = true;
-				break;
+				//found = true;
+				relation = rel_name;
+				return tb;
 			}
 
 		}
-
-		if (found) {
-			break;
-		}
 	}
 
-	if (!found) {
-		cerr << "the joins on table do not follow the required constraints"
-				<< endl;
-		exit(-1);
-	}
+	//if (!found) {
+	cerr << "the joins on table do not follow the required constraints" << endl;
+	exit(-1);
+	//}
 }
 
 void Statistics::updateTableInfoMaps(TableInfo newTableInfo) {

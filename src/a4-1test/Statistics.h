@@ -81,7 +81,8 @@ private:
 	double getRowsinJoinedTableContainingGivenRelation(string relName);
 	set<int> checkIfRelationsJoinedSatisfyConstraints(string rel_names[],
 			int numToJoin);
-	void checkIfAttributeExistsInGivenRelations(set<int> groupIds, Operand* op);
+	TableInfo* checkIfAttributeExistsInGivenRelations(set<int> groupIds,
+			Operand* op, string &relation);
 	void updateTableInfoMaps(TableInfo newTableInfo);
 
 public:
