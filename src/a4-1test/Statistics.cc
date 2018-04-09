@@ -171,6 +171,9 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 		OrList *orList = parseTree->left;
 
 		while (orList) {
+			TableInfo* temp_table_info1 = NULL;
+			TableInfo* temp_table_info2 = NULL;
+
 			ComparisonOp* cmp = orList->left;
 			if (cmp) {
 				int code = cmp->code;
@@ -189,7 +192,7 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 					tb2 = checkIfAttributeExistsInGivenRelations(groupIds, op2,
 							rel_name2);
 				}
-				vector<TableInfo*> tableInfos;
+				//vector<TableInfo*> tableInfos;
 				switch (code) {
 				case EQUALS:
 					//check if it is a join or selection
@@ -205,11 +208,34 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 						int tupPerValR = tb2->no_of_tuples / distValR;
 						int minDistValue = std::min(distValL, distValR);
 
-						double newNumOfTuples = (tupPerValL * tupPerValR
+						long newNumOfTuples = (tupPerValL * tupPerValR
 								* minDistValue);
 
-						TableInfo * newTableInfo = new TableInfo();
-						//newTableInfo->
+						TableInfo * new_table_info = new TableInfo();
+
+						for (unordered_map<string, long>::iterator it =
+								tb1->attributes.begin();
+								it != tb1->attributes.end(); ++it) {
+
+							new_table_info->attributes[it->first] = std::min(
+									newNumOfTuples, it->second);
+						}
+						for (unordered_map<string, long>::iterator it =
+								tb2->attributes.begin();
+								it != tb2->attributes.end(); ++it) {
+
+							new_table_info->attributes[it->first] = std::min(
+									newNumOfTuples, it->second);
+						}
+						new_table_info->no_of_tuples = newNumOfTuples;
+						new_table_info->table_set.insert(tb1->table_set.begin(),
+								tb1->table_set.end());
+						new_table_info->table_set.insert(tb2->table_set.begin(),
+								tb2->table_set.end());
+
+						temp_table_info1 ?
+								temp_table_info2 = new_table_info :
+								temp_table_info1 = new_table_info;
 
 					}
 					//2) selection
@@ -227,9 +253,23 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 							op = op2;
 						}
 
-						double newNumOfTuples = tbInfo->no_of_tuples
+						TableInfo * new_table_info = new TableInfo();
+						long newNumOfTuples = tbInfo->no_of_tuples
 								/ tbInfo->attributes[convert_to_qualified_name(
 										string(op->value), rel_name2)];
+
+						new_table_info->table_set.insert(
+								tbInfo->table_set.begin(),
+								tbInfo->table_set.end());
+
+						tbInfo->attributes[convert_to_qualified_name(
+								string(op->value), rel_name2)] = 1;
+
+						tbInfo->no_of_tuples = newNumOfTuples;
+
+						temp_table_info1 ?
+								temp_table_info2 = new_table_info :
+								temp_table_info1 = new_table_info;
 
 					}
 					break;
@@ -248,17 +288,71 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 						rel_name = &rel_name2;
 						op = op2;
 					}
+					TableInfo * new_table_info = new TableInfo();
 
-					double newNumOfTuples = tbInfo->no_of_tuples / 3.0;
+					long newNumOfTuples = tbInfo->no_of_tuples / 3.0;
+
+					new_table_info->table_set.insert(tbInfo->table_set.begin(),
+							tbInfo->table_set.end());
+
+					tbInfo->attributes[convert_to_qualified_name(
+							string(op->value), rel_name2)] =
+							tbInfo->attributes[convert_to_qualified_name(
+									string(op->value), rel_name2)] / 3.0;
+
+					tbInfo->no_of_tuples = newNumOfTuples;
+
+					temp_table_info1 ?
+							temp_table_info2 = new_table_info :
+							temp_table_info1 = new_table_info;
 					break;
 
 				}
 
 			}
 			//TODO Combine the results of OR if mupltiple OR conditions.
+			if (temp_table_info1 && temp_table_info2) {
+				std::set<string>::iterator it =
+						temp_table_info1->table_set.begin();
+				int group = relation_to_group_map[*it];
+				long original_no_of_tuples =
+						group_to_table_info_map[group]->no_of_tuples;
+
+				long new_num_of_tuples = (temp_table_info1->no_of_tuples
+						+ temp_table_info2->no_of_tuples
+						- ((temp_table_info1->no_of_tuples
+								/ original_no_of_tuples)
+								* temp_table_info2->no_of_tuples));
+
+				TableInfo * new_table_info = new TableInfo();
+
+				for (unordered_map<string, long>::iterator it =
+						temp_table_info1->attributes.begin();
+						it != temp_table_info1->attributes.end(); ++it) {
+
+					new_table_info->attributes[it->first] = std::min(
+							new_num_of_tuples, it->second);
+				}
+				for (unordered_map<string, long>::iterator it =
+						temp_table_info2->attributes.begin();
+						it != temp_table_info2->attributes.end(); ++it) {
+
+					new_table_info->attributes[it->first] = std::min(
+							new_num_of_tuples, it->second);
+				}
+
+				delete temp_table_info1;
+				delete temp_table_info2;
+				temp_table_info1 = new_table_info;
+				temp_table_info2 = NULL;
+			}
 			orList = orList->rightOr;
+			if (!orList) {
+				//TODO Update the state for next and.
+				updateTableInfoMaps(temp_table_info1);
+			}
 		}
-		//TODO Update the state for next and.
+
 		parseTree = parseTree->rightAnd;
 	}
 }
