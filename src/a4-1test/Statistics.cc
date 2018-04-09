@@ -177,11 +177,10 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 				Operand *op2 = cmp->right;
 
 				if (op1->code == NAME) {
-
+					checkIfAttributeExistsInGivenRelations(groupIds, op1);
 				}
-
 				if (op2->code == NAME) {
-
+					checkIfAttributeExistsInGivenRelations(groupIds, op2);
 				}
 
 				switch (code) {
@@ -246,3 +245,36 @@ bool is_qualified_name(string attribute_name) {
 
 	return true;
 }
+
+void Statistics::checkIfAttributeExistsInGivenRelations(set<int> groupIds,
+		Operand* op) {
+	bool found = false;
+	for (int groupId : groupIds) {
+		TableInfo* tb = group_to_table_info_map[groupId];
+
+		for (string rel_name : tb->table_set) {
+			auto it = tb->attributes.find(
+					convert_to_qualified_name(string(op->value), rel_name));
+			if (!(it == tb->attributes.end())) {
+				found = true;
+				break;
+			}
+
+		}
+
+		if (found) {
+			break;
+		}
+	}
+
+	if (!found) {
+		cerr << "the joins on table do not follow the required constraints"
+				<< endl;
+		exit(-1);
+	}
+}
+
+void Statistics::updateTableInfoMaps(TableInfo newTableInfo) {
+
+}
+

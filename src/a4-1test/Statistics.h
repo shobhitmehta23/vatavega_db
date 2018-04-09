@@ -8,7 +8,6 @@
 #include <fstream>
 #include <iostream>
 
-
 using namespace std;
 
 class TableInfo {
@@ -17,8 +16,12 @@ public:
 	set<string> table_set;
 	unordered_map<string, long> attributes;
 	TableInfo(int no_of_tuples, set<string> table_set);
-	TableInfo() {};
-	~TableInfo() {};
+	TableInfo() {
+	}
+	;
+	~TableInfo() {
+	}
+	;
 
 	friend ostream &operator<<(ostream &output, const TableInfo &table_info) {
 		// no of tuples
@@ -41,31 +44,30 @@ public:
 		return output;
 	}
 
-	friend istream & operator >> (istream &input,  TableInfo &table_info)
-	{
-	    input >> table_info.no_of_tuples;
+	friend istream & operator >>(istream &input, TableInfo &table_info) {
+		input >> table_info.no_of_tuples;
 
-	    int table_set_size;
-	    input >> table_set_size;
-	    for (int i = 0; i < table_set_size; i++) {
-	    		string temp;
-	    		input >> temp;
-	    		table_info.table_set.insert(temp);
-	    }
+		int table_set_size;
+		input >> table_set_size;
+		for (int i = 0; i < table_set_size; i++) {
+			string temp;
+			input >> temp;
+			table_info.table_set.insert(temp);
+		}
 
-	    int att_map_size;
-	    input >> att_map_size;
-	    for (int i = 0; i < att_map_size; i++) {
-	    		string attribute_name;
-	    		int distinct_count;
+		int att_map_size;
+		input >> att_map_size;
+		for (int i = 0; i < att_map_size; i++) {
+			string attribute_name;
+			int distinct_count;
 
-	    		input >> attribute_name;
-	    		input >> distinct_count;
+			input >> attribute_name;
+			input >> distinct_count;
 
-	    		table_info.attributes[attribute_name] = distinct_count;
-	    }
+			table_info.attributes[attribute_name] = distinct_count;
+		}
 
-	    return input;
+		return input;
 	}
 };
 
@@ -77,13 +79,15 @@ private:
 	int group_no = 1;
 
 	double getRowsinJoinedTableContainingGivenRelation(string relName);
-	set<int> checkIfRelationsJoinedSatisfyConstraints(string rel_names[], int numToJoin);
+	set<int> checkIfRelationsJoinedSatisfyConstraints(string rel_names[],
+			int numToJoin);
+	void checkIfAttributeExistsInGivenRelations(set<int> groupIds, Operand* op);
+	void updateTableInfoMaps(TableInfo newTableInfo);
 
 public:
 	Statistics();
 	Statistics(Statistics &copyMe);	 // Performs deep copy
 	~Statistics();
-
 
 	void AddRel(char *relName, int numTuples);
 	void AddAtt(char *relName, char *attName, int numDistincts);
@@ -92,7 +96,7 @@ public:
 	void Read(char *fromWhere);
 	void Write(char *fromWhere);
 
-	void  Apply(struct AndList *parseTree, char *relNames[], int numToJoin);
+	void Apply(struct AndList *parseTree, char *relNames[], int numToJoin);
 	double Estimate(struct AndList *parseTree, char **relNames, int numToJoin);
 };
 
