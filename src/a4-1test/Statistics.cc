@@ -36,7 +36,11 @@ void Statistics::AddRel(char *relName, int numTuples) {
 
 void Statistics::AddAtt(char *relName, char *attName, int numDistincts) {
 	string rel_name(relName);
-	string att_name(attName);
+
+	// constructing fully qualified attribute name
+	string att_name(relName);
+	att_name.append(".");
+	att_name.append(attName);
 
 	int grp_no = relation_to_group_map[rel_name];
 	TableInfo * table_info = group_to_table_info_map[grp_no];
@@ -53,7 +57,8 @@ void Statistics::CopyRel(char *oldName, char *newName) {
 
 	auto old_attribute_map = old_table_info->attributes;
 	for (auto attribute : old_attribute_map) {
-		this->AddAtt(newName, (char *)attribute.first.c_str(), attribute.second);
+		string new_att_name = attribute.first.substr(old_name.length() + 1, old_name.npos);
+		this->AddAtt(newName, (char *)new_att_name.c_str(), attribute.second);
 	}
 }
 	

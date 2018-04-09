@@ -594,9 +594,9 @@ void hijack() {
 	/*s.Read(fileN);
 	s.Write(fileN2);*/
 
-	/*Statistics s2(s);
+	Statistics s2(s);
 	s2.CopyRel(relation_name[0], "Employee_Duplicate");
-	s2.Write(fileN3);*/
+	s2.Write(fileN3);
 
 
 }
@@ -604,7 +604,7 @@ void hijack() {
 
 int main(int argc, char *argv[]) {
 
-	// hijack();
+	hijack();
 
 	if (argc < 2) {
 		cerr << "You need to supply me the query number to run as a command-line arg.." << endl;
