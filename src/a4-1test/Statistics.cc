@@ -254,9 +254,11 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 						}
 
 						TableInfo * new_table_info = new TableInfo();
-						long newNumOfTuples = tbInfo->no_of_tuples
-								/ tbInfo->attributes[convert_to_qualified_name(
-										string(op->value), rel_name2)];
+
+						long distVal =
+								tbInfo->attributes[convert_to_qualified_name(
+										string(op->value), *rel_name)];
+						long newNumOfTuples = tbInfo->no_of_tuples / distVal;
 
 						new_table_info->table_set.insert(
 								tbInfo->table_set.begin(),
@@ -298,7 +300,7 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 					tbInfo->attributes[convert_to_qualified_name(
 							string(op->value), rel_name2)] =
 							tbInfo->attributes[convert_to_qualified_name(
-									string(op->value), rel_name2)] / 3.0;
+									string(op->value), *rel_name)] / 3.0;
 
 					tbInfo->no_of_tuples = newNumOfTuples;
 
