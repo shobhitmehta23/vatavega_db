@@ -4,6 +4,10 @@
 #include <fstream>
 #include <iostream>
 
+string remove_relation_name_from_qualified_attribute_name (string qualified_attribute_name, string relation_name);
+string convert_to_qualified_name (string attribute_name, string relation_name);
+bool is_qualified_name(string attribute_name);
+
 using namespace std;
 
 Statistics::Statistics() {
@@ -36,11 +40,7 @@ void Statistics::AddRel(char *relName, int numTuples) {
 
 void Statistics::AddAtt(char *relName, char *attName, int numDistincts) {
 	string rel_name(relName);
-
-	// constructing fully qualified attribute name
-	string att_name(relName);
-	att_name.append(".");
-	att_name.append(attName);
+	string att_name = convert_to_qualified_name(string(attName), rel_name);
 
 	int grp_no = relation_to_group_map[rel_name];
 	TableInfo * table_info = group_to_table_info_map[grp_no];
@@ -57,7 +57,8 @@ void Statistics::CopyRel(char *oldName, char *newName) {
 
 	auto old_attribute_map = old_table_info->attributes;
 	for (auto attribute : old_attribute_map) {
-		string new_att_name = attribute.first.substr(old_name.length() + 1, old_name.npos);
+		string new_att_name = remove_relation_name_from_qualified_attribute_name(attribute.first,
+				old_name);
 		this->AddAtt(newName, (char *)new_att_name.c_str(), attribute.second);
 	}
 }
@@ -144,4 +145,22 @@ double Statistics::getRowsinJoinedTableContainingGivenRelation(string relName) {
 TableInfo::TableInfo(int no_of_tuples, set<string> table_set) {
 		this->no_of_tuples = no_of_tuples;
 		this->table_set = table_set;
+}
+
+string remove_relation_name_from_qualified_attribute_name (string qualified_attribute_name,
+		string relation_name) {
+	return qualified_attribute_name.substr(relation_name.length() + 1, relation_name.npos);
+}
+
+string convert_to_qualified_name (string attribute_name, string relation_name) {
+	return relation_name.append(".").append(attribute_name);
+}
+
+bool is_qualified_name(string attribute_name) {
+	size_t pos = attribute_name.find(".", 0);
+	if (pos == attribute_name.npos) {
+		return false;
+	}
+
+	return true;
 }

@@ -580,7 +580,7 @@ void hijack() {
 
 	char *fileN = "/Users/shobhit/Documents/cpp_workspace/vatavega_db/src/a4-1test/example.txt";
 	char *fileN2 = "/Users/shobhit/Documents/cpp_workspace/vatavega_db/src/a4-1test/example2.txt";
-	char *fileN3 = "/Users/shobhit/Documents/cpp_workspace/vatavega_db/src/a4-1test/example3.txt";
+	char *fileN3 = "/Users/shobhit/Documents/cpp_workspace/vatavega_db/src/a4-1test/example4.txt";
 
 	Statistics s;
 	s.AddRel(relation_name[0], 10);
