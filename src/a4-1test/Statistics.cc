@@ -132,7 +132,7 @@ void Statistics::Write(char *fromWhere) {
 
 set<int> Statistics::checkIfRelationsJoinedSatisfyConstraints(
 		string rel_names[], int numToJoin) {
-	set<int> table_info_set;
+	set<int> group_set;
 	set<string> expected_relation_set;
 	set<string> input_relation_set;
 
@@ -141,7 +141,7 @@ set<int> Statistics::checkIfRelationsJoinedSatisfyConstraints(
 		input_relation_set.insert(rel_names[i]);
 
 		int group = relation_to_group_map[rel_names[i]];
-		table_info_set.insert(group);
+		group_set.insert(group);
 		set<string> table_set = group_to_table_info_map[group]->table_set;
 		expected_relation_set.insert(table_set.begin(), table_set.end());
 	}
@@ -152,7 +152,7 @@ set<int> Statistics::checkIfRelationsJoinedSatisfyConstraints(
 		exit(-1);
 	}
 
-	return table_info_set;
+	return group_set;
 }
 
 void Statistics::Apply(struct AndList *parseTree, char *relNames[],
