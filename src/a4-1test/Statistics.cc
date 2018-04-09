@@ -61,7 +61,8 @@ void Statistics::CopyRel(char *oldName, char *newName) {
 	auto old_attribute_map = old_table_info->attributes;
 	for (auto attribute : old_attribute_map) {
 		string new_att_name =
-				remove_relation_name_from_qualified_attribute_name(attribute.first);
+				remove_relation_name_from_qualified_attribute_name(
+						attribute.first);
 		this->AddAtt(newName, (char *) new_att_name.c_str(), attribute.second);
 	}
 }
@@ -416,7 +417,8 @@ string remove_relation_name_from_qualified_attribute_name(
 }
 
 string convert_to_qualified_name(string attribute_name, string relation_name) {
-	return relation_name.append(".").append(attribute_name);
+	return relation_name.append(".").append(
+			remove_relation_name_from_qualified_attribute_name(attribute_name));
 }
 
 bool is_qualified_name(string attribute_name) {
@@ -431,7 +433,8 @@ bool is_qualified_name(string attribute_name) {
 TableInfo* Statistics::checkIfAttributeExistsInGivenRelations(set<int> groupIds,
 		Operand* op, string &relation) {
 	//bool found = false;
-	string att_name = remove_relation_name_from_qualified_attribute_name(string(op->value));
+	string att_name = remove_relation_name_from_qualified_attribute_name(
+			string(op->value));
 
 	for (int groupId : groupIds) {
 		TableInfo* tb = group_to_table_info_map[groupId];
