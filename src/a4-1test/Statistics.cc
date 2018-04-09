@@ -130,10 +130,29 @@ void Statistics::Write(char *fromWhere) {
 	meta_data_file.close();
 }
 
-set<TableInfo *> Statistics::checkIfRelationsJoinedSatisfyConstraints(
+set<int> Statistics::checkIfRelationsJoinedSatisfyConstraints(
 		string rel_names[], int numToJoin) {
-	set<TableInfo *> temp;
-	return temp;
+	set<int> table_info_set;
+	set<string> expected_relation_set;
+	set<string> input_relation_set;
+
+	for (int i = 0; i < numToJoin; i++) {
+		// add to input relation set
+		input_relation_set.insert(rel_names[i]);
+
+		int group = relation_to_group_map[rel_names[i]];
+		table_info_set.insert(group);
+		set<string> table_set = group_to_table_info_map[group]->table_set;
+		expected_relation_set.insert(table_set.begin(), table_set.end());
+	}
+
+	if (!(expected_relation_set == input_relation_set)) {
+		cerr << "the joins on table do not follow the required constraints"
+				<< endl;
+		exit(-1);
+	}
+
+	return table_info_set;
 }
 
 void Statistics::Apply(struct AndList *parseTree, char *relNames[],
