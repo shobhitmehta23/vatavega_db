@@ -274,7 +274,15 @@ void Statistics::checkIfAttributeExistsInGivenRelations(set<int> groupIds,
 	}
 }
 
-void Statistics::updateTableInfoMaps(TableInfo newTableInfo) {
+void Statistics::updateTableInfoMaps(TableInfo * table_info) {
+	set<string> table_set = table_info->table_set;
 
+	for (auto table : table_set) {
+		int old_group_to_be_removed = relation_to_group_map[table];
+		group_to_table_info_map.erase(old_group_to_be_removed);
+		relation_to_group_map[table] = group_no;
+	}
+
+	group_to_table_info_map[group_no++] = table_info;
 }
 

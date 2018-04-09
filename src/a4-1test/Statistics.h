@@ -82,7 +82,7 @@ private:
 	set<int> checkIfRelationsJoinedSatisfyConstraints(string rel_names[],
 			int numToJoin);
 	void checkIfAttributeExistsInGivenRelations(set<int> groupIds, Operand* op);
-	void updateTableInfoMaps(TableInfo newTableInfo);
+	void updateTableInfoMaps(TableInfo * table_info);
 
 public:
 	Statistics();
