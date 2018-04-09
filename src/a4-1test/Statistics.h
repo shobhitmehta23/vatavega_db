@@ -76,6 +76,8 @@ private:
 	unordered_map<string, int> relation_to_group_map;
 	int group_no = 1;
 
+	double getRowsinJoinedTableContainingGivenRelation(string relName);
+
 public:
 	Statistics();
 	Statistics(Statistics &copyMe);	 // Performs deep copy

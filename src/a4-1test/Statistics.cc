@@ -125,6 +125,15 @@ void  Statistics::Apply(struct AndList *parseTree, char *relNames[], int numToJo
 }
 
 double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numToJoin) {
+	Statistics s(*this);
+	s.Apply(parseTree, relNames, numToJoin);
+	return s.getRowsinJoinedTableContainingGivenRelation(string(relNames[0]));
+}
+
+double Statistics::getRowsinJoinedTableContainingGivenRelation(string relName) {
+	int group_number = relation_to_group_map[relName];
+	TableInfo * table_info = group_to_table_info_map[group_number];
+	return table_info->no_of_tuples;
 }
 
 TableInfo::TableInfo(int no_of_tuples, set<string> table_set) {
