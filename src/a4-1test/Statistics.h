@@ -83,7 +83,8 @@ private:
 			int numToJoin);
 	TableInfo* checkIfAttributeExistsInGivenRelations(set<int> groupIds,
 			Operand* op, string &relation);
-	void updateTableInfoMaps(TableInfo newTableInfo);
+	void checkIfAttributeExistsInGivenRelations(set<int> groupIds, Operand* op);
+	void updateTableInfoMaps(TableInfo * table_info);
 
 public:
 	Statistics();
