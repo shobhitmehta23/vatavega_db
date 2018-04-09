@@ -6,7 +6,7 @@
 #include <vector>
 
 string remove_relation_name_from_qualified_attribute_name(
-		string qualified_attribute_name, string relation_name);
+		string qualified_attribute_name);
 string convert_to_qualified_name(string attribute_name, string relation_name);
 bool is_qualified_name(string attribute_name);
 
@@ -61,8 +61,7 @@ void Statistics::CopyRel(char *oldName, char *newName) {
 	auto old_attribute_map = old_table_info->attributes;
 	for (auto attribute : old_attribute_map) {
 		string new_att_name =
-				remove_relation_name_from_qualified_attribute_name(
-						attribute.first, old_name);
+				remove_relation_name_from_qualified_attribute_name(attribute.first);
 		this->AddAtt(newName, (char *) new_att_name.c_str(), attribute.second);
 	}
 }
@@ -404,9 +403,16 @@ TableInfo::TableInfo(int no_of_tuples, set<string> table_set) {
 }
 
 string remove_relation_name_from_qualified_attribute_name(
-		string qualified_attribute_name, string relation_name) {
-	return qualified_attribute_name.substr(relation_name.length() + 1,
-			relation_name.npos);
+		string qualified_attribute_name) {
+
+	if (!is_qualified_name(qualified_attribute_name)) {
+		return qualified_attribute_name;
+	}
+
+	size_t pos = qualified_attribute_name.find(".", 0);
+
+	return qualified_attribute_name.substr(pos + 1,
+			qualified_attribute_name.npos);
 }
 
 string convert_to_qualified_name(string attribute_name, string relation_name) {
@@ -425,12 +431,15 @@ bool is_qualified_name(string attribute_name) {
 TableInfo* Statistics::checkIfAttributeExistsInGivenRelations(set<int> groupIds,
 		Operand* op, string &relation) {
 	//bool found = false;
+	string att_name = remove_relation_name_from_qualified_attribute_name(string(op->value));
+
 	for (int groupId : groupIds) {
 		TableInfo* tb = group_to_table_info_map[groupId];
 
 		for (auto rel_name : tb->table_set) {
 			auto it = tb->attributes.find(
-					convert_to_qualified_name(string(op->value), rel_name));
+					convert_to_qualified_name(att_name, rel_name));
+
 			if (!(it == tb->attributes.end())) {
 				//found = true;
 				relation = rel_name;
