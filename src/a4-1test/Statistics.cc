@@ -228,6 +228,15 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 							new_table_info->attributes[it->first] = std::min(
 									newNumOfTuples, it->second);
 						}
+
+//						for (unordered_map<string, long>::iterator it =
+//								new_table_info->attributes.begin();
+//								it != new_table_info->attributes.end(); ++it) {
+//
+//							cout << "key: " << it->first << "value: "
+//									<< new_table_info->attributes[it->first]
+//									<< endl;
+//						}
 						new_table_info->no_of_tuples = newNumOfTuples;
 						new_table_info->table_set.insert(tb1->table_set.begin(),
 								tb1->table_set.end());
@@ -265,10 +274,18 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 								tbInfo->table_set.begin(),
 								tbInfo->table_set.end());
 
-						tbInfo->attributes[convert_to_qualified_name(
+						for (unordered_map<string, long>::iterator it =
+								tbInfo->attributes.begin();
+								it != tbInfo->attributes.end(); ++it) {
+
+							new_table_info->attributes[it->first] = std::min(
+									newNumOfTuples, it->second);
+						}
+
+						new_table_info->attributes[convert_to_qualified_name(
 								string(op->value), rel_name2)] = 1;
 
-						tbInfo->no_of_tuples = newNumOfTuples;
+						new_table_info->no_of_tuples = newNumOfTuples;
 
 						temp_table_info1 ?
 								temp_table_info2 = new_table_info :
@@ -298,12 +315,20 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 					new_table_info->table_set.insert(tbInfo->table_set.begin(),
 							tbInfo->table_set.end());
 
-					tbInfo->attributes[convert_to_qualified_name(
+					for (unordered_map<string, long>::iterator it =
+							tbInfo->attributes.begin();
+							it != tbInfo->attributes.end(); ++it) {
+
+						new_table_info->attributes[it->first] = std::min(
+								newNumOfTuples, it->second);
+					}
+
+					new_table_info->attributes[convert_to_qualified_name(
 							string(op->value), rel_name2)] =
 							tbInfo->attributes[convert_to_qualified_name(
 									string(op->value), *rel_name)] / 3.0;
 
-					tbInfo->no_of_tuples = newNumOfTuples;
+					new_table_info->no_of_tuples = newNumOfTuples;
 
 					temp_table_info1 ?
 							temp_table_info2 = new_table_info :
@@ -404,8 +429,11 @@ TableInfo* Statistics::checkIfAttributeExistsInGivenRelations(set<int> groupIds,
 		TableInfo* tb = group_to_table_info_map[groupId];
 
 		set<string> temp_set = tb->table_set;
-		cout << "test " << temp_set.size() << endl;
+		//cout << "test " << temp_set.size() << endl;
 		for (auto rel_name : temp_set) {
+//			cout << "att name : "
+//					<< convert_to_qualified_name(string(op->value), rel_name)
+//					<< endl;
 			auto it = tb->attributes.find(
 					convert_to_qualified_name(string(op->value), rel_name));
 			if (!(it == tb->attributes.end())) {
