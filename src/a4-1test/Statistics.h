@@ -77,6 +77,7 @@ private:
 	int group_no = 1;
 
 	double getRowsinJoinedTableContainingGivenRelation(string relName);
+	set<TableInfo *> checkIfRelationsJoinedSatisfyConstraints(string rel_names[], int numToJoin);
 
 public:
 	Statistics();

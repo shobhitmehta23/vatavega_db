@@ -127,7 +127,18 @@ void Statistics::Write(char *fromWhere) {
 	meta_data_file.close();
 }
 
+
+set<TableInfo *>Statistics::checkIfRelationsJoinedSatisfyConstraints(string rel_names[], int numToJoin) {
+	set<TableInfo *> temp;
+	return temp;
+}
+
 void  Statistics::Apply(struct AndList *parseTree, char *relNames[], int numToJoin) {
+	string rel_names[numToJoin];
+
+	for (int i = 0; i < numToJoin; i++) {
+		rel_names[i] = string(relNames[i]);
+	}
 }
 
 double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numToJoin) {
