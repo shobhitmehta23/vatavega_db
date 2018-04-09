@@ -184,6 +184,7 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 				string rel_name1;
 				string rel_name2;
 
+				groupIds = getGroupIdsForRelations(rel_names, numToJoin);
 				if (op1->code == NAME) {
 					tb1 = checkIfAttributeExistsInGivenRelations(groupIds, op1,
 							rel_name1);
@@ -434,7 +435,8 @@ void Statistics::updateTableInfoMaps(TableInfo * table_info) {
 	group_to_table_info_map[group_no++] = table_info;
 }
 
-set<int> Statistics::getGroupIdsForRelations(string relation_names[], int number_of_relation) {
+set<int> Statistics::getGroupIdsForRelations(string relation_names[],
+		int number_of_relation) {
 	set<int> group_ids;
 
 	for (int i = 0; i < number_of_relation; i++) {
