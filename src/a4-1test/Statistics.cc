@@ -402,7 +402,9 @@ TableInfo* Statistics::checkIfAttributeExistsInGivenRelations(set<int> groupIds,
 	for (int groupId : groupIds) {
 		TableInfo* tb = group_to_table_info_map[groupId];
 
-		for (string rel_name : tb->table_set) {
+		set<string> temp_set = tb->table_set;
+		cout << "test " << temp_set.size() << endl;
+		for (auto rel_name : temp_set) {
 			auto it = tb->attributes.find(
 					convert_to_qualified_name(string(op->value), rel_name));
 			if (!(it == tb->attributes.end())) {
@@ -432,3 +434,12 @@ void Statistics::updateTableInfoMaps(TableInfo * table_info) {
 	group_to_table_info_map[group_no++] = table_info;
 }
 
+set<int> Statistics::getGroupIdsForRelations(string relation_names[], int number_of_relation) {
+	set<int> group_ids;
+
+	for (int i = 0; i < number_of_relation; i++) {
+		group_ids.insert(relation_to_group_map[relation_names[i]]);
+	}
+
+	return group_ids;
+}

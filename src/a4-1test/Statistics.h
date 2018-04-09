@@ -85,6 +85,7 @@ private:
 			Operand* op, string &relation);
 	void checkIfAttributeExistsInGivenRelations(set<int> groupIds, Operand* op);
 	void updateTableInfoMaps(TableInfo * table_info);
+	set<int> getGroupIdsForRelations(string relation_names[], int number_of_relation);
 
 public:
 	Statistics();
