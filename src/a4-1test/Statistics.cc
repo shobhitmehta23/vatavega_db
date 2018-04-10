@@ -199,19 +199,22 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 					//check if it is a join or selection
 					//1) join
 					if (op1->code == NAME && op2->code == NAME) {
-						int distValL =
+						double distValL =
 								tb1->attributes[convert_to_qualified_name(
 										string(op1->value), rel_name1)];
-						int distValR =
+						double distValR =
 								tb2->attributes[convert_to_qualified_name(
 										string(op2->value), rel_name2)];
-						int tupPerValL = tb1->no_of_tuples / distValL;
-						int tupPerValR = tb2->no_of_tuples / distValR;
-						int minDistValue = std::min(distValL, distValR);
-
+						double tupPerValL = tb1->no_of_tuples / distValL;
+						//cout<< "tuplesL: "<< tb1->no_of_tuples << " DistValL " << distValL<< "tupPerValL: "<< tupPerValL<< endl;
+						double tupPerValR = tb2->no_of_tuples / distValR;
+						//cout<< "tuplesR: "<< tb2->no_of_tuples << " DistValR " << distValR<< "tupPerValR: "<< tupPerValR<< endl;
+						long minDistValue = std::min(distValL, distValR);
+						//cout<< "minDistValue: "<< minDistValue<< endl;
 						long newNumOfTuples = (tupPerValL * tupPerValR
 								* minDistValue);
 
+						//cout<< "newNumOfTuples: "<< newNumOfTuples<< endl<< endl;
 						TableInfo * new_table_info = new TableInfo();
 						new_table_info->no_of_tuples = newNumOfTuples;
 
