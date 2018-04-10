@@ -213,6 +213,7 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 								* minDistValue);
 
 						TableInfo * new_table_info = new TableInfo();
+						new_table_info->no_of_tuples = newNumOfTuples;
 
 						for (unordered_map<string, long>::iterator it =
 								tb1->attributes.begin();
@@ -229,15 +230,6 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 									newNumOfTuples, it->second);
 						}
 
-//						for (unordered_map<string, long>::iterator it =
-//								new_table_info->attributes.begin();
-//								it != new_table_info->attributes.end(); ++it) {
-//
-//							cout << "key: " << it->first << "value: "
-//									<< new_table_info->attributes[it->first]
-//									<< endl;
-//						}
-						new_table_info->no_of_tuples = newNumOfTuples;
 						new_table_info->table_set.insert(tb1->table_set.begin(),
 								tb1->table_set.end());
 						new_table_info->table_set.insert(tb2->table_set.begin(),
@@ -283,7 +275,7 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 						}
 
 						new_table_info->attributes[convert_to_qualified_name(
-								string(op->value), rel_name2)] = 1;
+								string(op->value), *rel_name)] = 1;
 
 						new_table_info->no_of_tuples = newNumOfTuples;
 
