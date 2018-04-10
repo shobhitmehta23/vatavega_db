@@ -338,26 +338,22 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 						group_to_table_info_map[group]->no_of_tuples;
 
 				long new_num_of_tuples = (temp_table_info1->no_of_tuples
-						+ temp_table_info2->no_of_tuples
-						- floor(
-								((double) temp_table_info1->no_of_tuples
-										/ original_no_of_tuples)
-										* temp_table_info2->no_of_tuples));
+						+ temp_table_info2->no_of_tuples);
 
-				/*cout << "temp_table_info1->no_of_tuples: "
-				 << temp_table_info1->no_of_tuples << endl;
-				 cout << "temp_table_info2->no_of_tuples: "
-				 << temp_table_info2->no_of_tuples << endl;
-				 cout << "original_no_of_tuples: " << original_no_of_tuples
-				 << endl;
+				double sub;
 
-				 cout << "subtraction: "
-				 << ((double) temp_table_info1->no_of_tuples
-				 / original_no_of_tuples)
-				 * temp_table_info2->no_of_tuples << endl;
+				if (temp_table_info1->no_of_tuples
+						% temp_table_info2->no_of_tuples == 0) {
+					sub = 0.0;
+				} else {
+					sub = floor(
+							((double) temp_table_info1->no_of_tuples
+									/ original_no_of_tuples)
+									* temp_table_info2->no_of_tuples);
 
-				 cout << "new_num_of_tuples: " << new_num_of_tuples << endl
-				 << endl;*/
+				}
+
+				new_num_of_tuples = new_num_of_tuples - sub;
 
 				TableInfo * new_table_info = new TableInfo();
 				new_table_info->no_of_tuples = new_num_of_tuples;
@@ -445,7 +441,7 @@ bool is_qualified_name(string attribute_name) {
 
 TableInfo* Statistics::checkIfAttributeExistsInGivenRelations(set<int> groupIds,
 		Operand* op, string &relation) {
-	//bool found = false;
+//bool found = false;
 	string att_name = remove_relation_name_from_qualified_attribute_name(
 			string(op->value));
 	if (is_qualified_name(string(op->value))) {
@@ -477,10 +473,10 @@ TableInfo* Statistics::checkIfAttributeExistsInGivenRelations(set<int> groupIds,
 		}
 	}
 
-	//if (!found) {
+//if (!found) {
 	cerr << "the joins on table do not follow the required constraints" << endl;
 	exit(-1);
-	//}
+//}
 }
 
 void Statistics::updateTableInfoMaps(TableInfo * table_info) {
