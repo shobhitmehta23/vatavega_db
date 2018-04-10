@@ -427,6 +427,19 @@ TableInfo* Statistics::checkIfAttributeExistsInGivenRelations(set<int> groupIds,
 	//bool found = false;
 	string att_name = remove_relation_name_from_qualified_attribute_name(
 			string(op->value));
+	if (is_qualified_name(string(op->value))) {
+		string rel = strtok((char*) string(op->value).c_str(), ".");
+		//cout << "**************" << rel;
+		int grp = relation_to_group_map[rel];
+		TableInfo* tb = group_to_table_info_map[grp];
+		auto it = tb->attributes.find(string(op->value));
+
+		if (!(it == tb->attributes.end())) {
+			//found = true;
+			relation = rel;
+			return tb;
+		}
+	}
 
 	for (int groupId : groupIds) {
 		TableInfo* tb = group_to_table_info_map[groupId];
