@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <cmath>
 
 string remove_relation_name_from_qualified_attribute_name(
 		string qualified_attribute_name);
@@ -169,10 +170,10 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 
 	while (parseTree) {
 		OrList *orList = parseTree->left;
+		TableInfo* temp_table_info1 = NULL;
+		TableInfo* temp_table_info2 = NULL;
 
 		while (orList) {
-			TableInfo* temp_table_info1 = NULL;
-			TableInfo* temp_table_info2 = NULL;
 
 			ComparisonOp* cmp = orList->left;
 			if (cmp) {
@@ -206,15 +207,11 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 								tb2->attributes[convert_to_qualified_name(
 										string(op2->value), rel_name2)];
 						double tupPerValL = tb1->no_of_tuples / distValL;
-						//cout<< "tuplesL: "<< tb1->no_of_tuples << " DistValL " << distValL<< "tupPerValL: "<< tupPerValL<< endl;
 						double tupPerValR = tb2->no_of_tuples / distValR;
-						//cout<< "tuplesR: "<< tb2->no_of_tuples << " DistValR " << distValR<< "tupPerValR: "<< tupPerValR<< endl;
 						long minDistValue = std::min(distValL, distValR);
-						//cout<< "minDistValue: "<< minDistValue<< endl;
 						long newNumOfTuples = (tupPerValL * tupPerValR
 								* minDistValue);
 
-						//cout<< "newNumOfTuples: "<< newNumOfTuples<< endl<< endl;
 						TableInfo * new_table_info = new TableInfo();
 						new_table_info->no_of_tuples = newNumOfTuples;
 
@@ -260,10 +257,11 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 
 						TableInfo * new_table_info = new TableInfo();
 
-						long distVal =
+						double distVal =
 								tbInfo->attributes[convert_to_qualified_name(
 										string(op->value), *rel_name)];
 						long newNumOfTuples = tbInfo->no_of_tuples / distVal;
+						new_table_info->no_of_tuples = newNumOfTuples;
 
 						new_table_info->table_set.insert(
 								tbInfo->table_set.begin(),
@@ -279,8 +277,6 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 
 						new_table_info->attributes[convert_to_qualified_name(
 								string(op->value), *rel_name)] = 1;
-
-						new_table_info->no_of_tuples = newNumOfTuples;
 
 						temp_table_info1 ?
 								temp_table_info2 = new_table_info :
@@ -307,6 +303,8 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 
 					long newNumOfTuples = tbInfo->no_of_tuples / 3.0;
 
+					new_table_info->no_of_tuples = newNumOfTuples;
+
 					new_table_info->table_set.insert(tbInfo->table_set.begin(),
 							tbInfo->table_set.end());
 
@@ -322,8 +320,6 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 							string(op->value), rel_name2)] =
 							tbInfo->attributes[convert_to_qualified_name(
 									string(op->value), *rel_name)] / 3.0;
-
-					new_table_info->no_of_tuples = newNumOfTuples;
 
 					temp_table_info1 ?
 							temp_table_info2 = new_table_info :
@@ -343,11 +339,32 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 
 				long new_num_of_tuples = (temp_table_info1->no_of_tuples
 						+ temp_table_info2->no_of_tuples
-						- ((temp_table_info1->no_of_tuples
-								/ original_no_of_tuples)
-								* temp_table_info2->no_of_tuples));
+						- floor(
+								((double) temp_table_info1->no_of_tuples
+										/ original_no_of_tuples)
+										* temp_table_info2->no_of_tuples));
+
+				/*cout << "temp_table_info1->no_of_tuples: "
+				 << temp_table_info1->no_of_tuples << endl;
+				 cout << "temp_table_info2->no_of_tuples: "
+				 << temp_table_info2->no_of_tuples << endl;
+				 cout << "original_no_of_tuples: " << original_no_of_tuples
+				 << endl;
+
+				 cout << "subtraction: "
+				 << ((double) temp_table_info1->no_of_tuples
+				 / original_no_of_tuples)
+				 * temp_table_info2->no_of_tuples << endl;
+
+				 cout << "new_num_of_tuples: " << new_num_of_tuples << endl
+				 << endl;*/
 
 				TableInfo * new_table_info = new TableInfo();
+				new_table_info->no_of_tuples = new_num_of_tuples;
+
+				new_table_info->table_set.insert(
+						temp_table_info1->table_set.begin(),
+						temp_table_info1->table_set.end());
 
 				for (unordered_map<string, long>::iterator it =
 						temp_table_info1->attributes.begin();
@@ -373,6 +390,7 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 			if (!orList) {
 				//TODO Update the state for next and.
 				updateTableInfoMaps(temp_table_info1);
+				temp_table_info1 = NULL;
 			}
 		}
 
@@ -432,7 +450,6 @@ TableInfo* Statistics::checkIfAttributeExistsInGivenRelations(set<int> groupIds,
 			string(op->value));
 	if (is_qualified_name(string(op->value))) {
 		string rel = strtok((char*) string(op->value).c_str(), ".");
-		//cout << "**************" << rel;
 		int grp = relation_to_group_map[rel];
 		TableInfo* tb = group_to_table_info_map[grp];
 		auto it = tb->attributes.find(string(op->value));
