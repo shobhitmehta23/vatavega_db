@@ -9,8 +9,8 @@ endif
 
 all: clean main
 
-main:   y.tab.o lex.yy.o main.o
-	$(CC) -o main y.tab.o lex.yy.o main.o -lfl
+main : y.tab.o lex.yy.o AndListPermutationIterator.o main.o
+	$(CC) -o main y.tab.o lex.yy.o AndListPermutationIterator.o main.o -lfl
 	
 main.o : main.cc
 	$(CC) -g -c main.cc
@@ -54,6 +54,9 @@ SortedFile.o: SortedFile.cc
 DBFileBase.o: DBFileBase.cc
 	$(CC) -g -c DBFileBase.cc
 
+AndListPermutationIterator.o: y.tab.o lex.yy.o AndListPermutationIterator.cc
+	$(CC) -g -c AndListPermutationIterator.cc
+	
 Comparison.o: Comparison.cc
 	$(CC) -g -c Comparison.cc
 	
