@@ -1,0 +1,16 @@
+new files - 
+BigQ
+DBFile
+HeapFile
+RelOp
+SortedFile
+DBFileBase
+
+modified files- 
+Comparison
+ComparisonEngine
+File
+Makefile
+Pipe
+Record
+Defs
