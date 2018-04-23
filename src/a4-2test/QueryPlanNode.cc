@@ -155,7 +155,11 @@ void ProjectNode::printNode() {
 	printPipe(inputPipe, true);
 	printPipe(outputPipe, false);
 	printSchema(outSchema);
-	// print attributes to keep
+	cout << "attributes to keep" << endl;
+	for (int i = 0; i < numOfAttsOutput; i++) {
+		cout << keepme[i] << '\t';
+	}
+	cout << endl;
 	printNodeBoundary();
 }
 
