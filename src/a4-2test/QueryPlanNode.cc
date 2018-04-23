@@ -38,7 +38,9 @@ void SelectFileNode::printNode() {
 
 void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 	AndList* ands = andList;
-
+	AndList* prev = ands;
+	string tableName = string(
+			table->aliasAs == NULL ? table->tableName : table->aliasAs);
 	AndList* selectAndList = new AndList();
 	AndList* currentAndListPtr = selectAndList;
 	while (ands != NULL) {
@@ -53,16 +55,53 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 					goToNextAnd = true;
 					break;
 				}
+				Operand* nameOperand;
+				if (left->code == NAME) {
+					nameOperand = left;
+				} else {
+					nameOperand = right;
+				}
+
+				auto it = tableInfo->attributes.find(
+						string(nameOperand->value));
+
+				if ((it == tableInfo->attributes.end())) {
+					auto it2 = tableInfo->attributes.find(
+							tableName + "." + string(nameOperand->value));
+					if ((it == tableInfo->attributes.end())) {
+						goToNextAnd = true;
+						break;
+					}
+				}
 
 			}
 			ors = ors.rightOr;
 		}
 		if (goToNextAnd) {
+			ands = ands->rightAnd;
 			continue;
 		}
-		currentAndListPtr->left = ands->left;
-		ands = ands->rightAnd;
+		//just to handle the first time OR
+		if (currentAndListPtr->left == NULL) {
+			currentAndListPtr->left = ands->left;
+		} else {
+			currentAndListPtr->rightAnd = ands;
+			currentAndListPtr = currentAndListPtr->rightAnd;
+		}
+
+		if (ands->rightAnd != NULL) {
+			ands->left = ands->rightAnd->left;
+			ands->rightAnd = ands->rightAnd->rightAnd;
+		} else {
+			break; // ands->rightAnd == NULL
+		}
+
 	}
+	currentAndListPtr->rightAnd = NULL;
+
+	char * ch[] = {tableName.c_str()};
+	//calculate and apply the estimates
+	stats.Apply(currentAndListPtr, ch, 1);
 }
 
 void SelectPipeNode::printNode() {
