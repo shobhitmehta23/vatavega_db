@@ -11,6 +11,7 @@
 #include "DBFile.h"
 #include "Schema.h"
 #include "ParseTree.h"
+#include "Statistics.h"
 
 class QueryPlanNode {
 public:
@@ -24,11 +25,18 @@ public:
 };
 
 class SelectFileNode: public QueryPlanNode {
-	SelectFileNode();
-	~SelectFileNode();
-	void printNode();
+private:
+	void applySelectCondition(AndList andList, Statistics stats);
+public:
 	DBFile inputFile;
 	TableList table;
+
+	SelectFileNode(TableList tbl, AndList andList, Statistics stats) {
+		this->table = tbl;
+		applySelectCondition(andList, stats);
+	}
+	~SelectFileNode();
+	void printNode();
 
 };
 
