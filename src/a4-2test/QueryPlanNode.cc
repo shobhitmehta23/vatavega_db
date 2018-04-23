@@ -1,6 +1,4 @@
 #include "QueryPlanNode.h"
-#include <vector>
-
 #include <cstring>
 
 void printSchema(Schema& schema);
@@ -9,6 +7,7 @@ void printPipe(Pipe *pipe, bool ifInputPipe);
 char* getRelationName(TableList* table);
 char * mergeThreeString(char *str1, char *str2, char *str3);
 
+int QueryPlanNode::pipeIdCounter = 0;
 QueryPlanNode::QueryPlanNode(QueryNodeType nodeType) {
 	this->nodeType = nodeType;
 }
@@ -19,6 +18,9 @@ QueryPlanNode::~QueryPlanNode() {
 
 void QueryPlanNode::printQueryTree() {
 	printQueryTreeHelper(this);
+}
+void QueryPlanNode::printNode() {
+
 }
 
 void QueryPlanNode::printQueryTreeHelper(QueryPlanNode *queryPlanNode) {
@@ -156,10 +158,10 @@ JoinNode::JoinNode(QueryPlanNode* node1, QueryPlanNode* node2, bool doApply,
 	vector<char*> relations;
 
 	if (node1->nodeType == Select_File_Node) {
-		SelectFileNode* node = node1;
+		SelectFileNode* node = (SelectFileNode*) node1;
 		relations.push_back(getRelationName(node->table));
 	} else if (node1->nodeType == Join_Node) {
-		JoinNode* node = node1;
+		JoinNode* node = (JoinNode*) node1;
 		for (char* tbl : node->relNames) {
 			relations.push_back(tbl);
 		}
@@ -167,22 +169,18 @@ JoinNode::JoinNode(QueryPlanNode* node1, QueryPlanNode* node2, bool doApply,
 	char** arr;
 	std::copy(relations.begin(), relations.end(), arr);
 
-	if (doApply) {
-		estimate = stats.Apply(query, arr, relations.size());
-	} else {
-		estimate = stats.Estimate(query, arr, relations.size());
-	}
-
+	estimate = stats.Estimate(query, arr, relations.size());
 	relNames = relations;
 
 	//only execute while applying permanent changes.
 	if (doApply) {
+		stats.Apply(query, arr, relations.size());
 
 		outputPipe = new Pipe(100, ++pipeIdCounter);
 
 		int numberOfAtt1 = node1->outSchema->GetNumAtts();
 		int numberOfAtt2 = node2->outSchema->GetNumAtts();
-		Attribute * attributes[numberOfAtt1 + numberOfAtt2];
+		Attribute attributes[numberOfAtt1 + numberOfAtt2];
 		Attribute * attributes1 = node1->outSchema->GetAtts();
 
 		for (int i = 0; i < numberOfAtt1; i++) {
@@ -192,8 +190,9 @@ JoinNode::JoinNode(QueryPlanNode* node1, QueryPlanNode* node2, bool doApply,
 			attributes[i] = attributes1[i - numberOfAtt1];
 		}
 
-		outSchema->Schema(outputPipe->pipeId, numberOfAtt2 + numberOfAtt1,
-				attributes);
+		outSchema = new Schema(
+				(char*) std::to_string(outputPipe->getPipeId()).c_str(),
+				numberOfAtt2 + numberOfAtt1, attributes);
 
 		Record literal;
 		cnf.GrowFromParseTree(query, outSchema, literal);

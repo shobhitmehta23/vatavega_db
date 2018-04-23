@@ -7,6 +7,7 @@
 #include "Statistics.h"
 #include "Pipe.h"
 #include "Function.h"
+#include<vector>
 
 enum QueryNodeType {
 	Select_File_Node,
@@ -31,7 +32,7 @@ public:
 	QueryPlanNode * left = NULL;
 	QueryPlanNode * right = NULL;
 	QueryNodeType nodeType;
-	static int pipeIdCounter = 0;
+	static int pipeIdCounter;
 	Pipe *outputPipe;
 	CNF cnf;
 
@@ -89,7 +90,8 @@ public:
 
 	JoinNode(QueryPlanNode* node1, QueryPlanNode* node2, bool doApply,
 			Statistics &stats, AndList* query);
-	~JoinNode();
+	~JoinNode() {
+	}
 	void printNode();
 };
 
