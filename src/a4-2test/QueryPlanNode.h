@@ -26,13 +26,16 @@ public:
 
 class SelectFileNode: public QueryPlanNode {
 private:
-	void applySelectCondition(AndList* andList, Statistics stats);
+	void applySelectCondition(AndList* andList, Statistics &stats);
 public:
 	DBFile inputFile;
 	TableList* table;
+	TableInfo tableInfo;
 
-	SelectFileNode(TableList* tbl, AndList* andList, Statistics stats) {
+	SelectFileNode(TableList* tbl, AndList* andList, Statistics &stats) {
 		this->table = tbl;
+		this->tableInfo =
+				stats.group_to_table_info_map[stats.relation_to_group_map[table->tableName]];
 		applySelectCondition(andList, stats);
 	}
 	~SelectFileNode();
