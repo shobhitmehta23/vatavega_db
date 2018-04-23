@@ -24,6 +24,7 @@ public:
 
 class SelectFileNode: public QueryPlanNode {
 private:
+	//identifies and applies the conditions in the where clause for the given table for file select operation.
 	void applySelectCondition(AndList* andList, Statistics &stats);
 public:
 	DBFile inputFile;
@@ -32,8 +33,14 @@ public:
 
 	SelectFileNode(TableList* tbl, AndList* andList, Statistics &stats) {
 		this->table = tbl;
+		char* tableName =
+				table->aliasAs == NULL ? table->tableName : table->aliasAs;
+		if (table->aliasAs != NULL) {
+			stats.CopyRel(table->tableName, table->aliasAs);
+		}
 		this->tableInfo =
-				stats.group_to_table_info_map[stats.relation_to_group_map[table->tableName]];
+				stats.group_to_table_info_map[stats.relation_to_group_map[string(
+						tableName)]];
 		applySelectCondition(andList, stats);
 	}
 	~SelectFileNode();
