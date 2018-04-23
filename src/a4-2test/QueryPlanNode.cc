@@ -188,12 +188,13 @@ void writeOutNode::printNode() {
 
 void printSchema(Schema& schema) {
 	cout << "Output Schema" << endl;
-	int numberOfAtt = schema.numAtts;
+	int numberOfAtt = schema.GetNumAtts();
 
+	Attribute *att = schema.GetAtts();
 	for (int i = 0; i < numberOfAtt; i++) {
-		string temp = "Att" + (i + 1) + ":\t";
+		string temp = "Att" + to_string((i + 1)) + ":\t";
 
-		switch (schema.myAtts[i].myType) {
+		switch (att[i].myType) {
 		case Double:
 			cout << "double ";
 			break;

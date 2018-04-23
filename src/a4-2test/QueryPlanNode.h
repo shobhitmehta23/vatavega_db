@@ -47,7 +47,7 @@ public:
 						tableName)]];
 		applySelectCondition(andList, stats);
 	}
-	~SelectFileNode();
+	~SelectFileNode(){};
 	void printNode();
 
 };

@@ -9,8 +9,8 @@ endif
 
 all: clean main
 
-main : y.tab.o lex.yy.o AndListPermutationIterator.o QueryPlanNode.o Statistics.o main.o
-	$(CC) -o main y.tab.o lex.yy.o AndListPermutationIterator.o  QueryPlanNode.o Statistics.o main.o -lfl
+main : y.tab.o lex.yy.o AndListPermutationIterator.o Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Statistics.o Pipe.o HeapFile.o SortedFile.o DBFileBase.o BigQ.o RelOp.o Function.o  QueryPlanNode.o main.o
+	$(CC) -o main y.tab.o lex.yy.o AndListPermutationIterator.o Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Statistics.o Pipe.o HeapFile.o SortedFile.o DBFileBase.o BigQ.o RelOp.o Function.o QueryPlanNode.o main.o -lfl
 	
 main.o : main.cc
 	$(CC) -g -c main.cc
