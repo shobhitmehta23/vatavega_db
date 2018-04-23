@@ -14,13 +14,18 @@
 #include "Statistics.h"
 
 class QueryPlanNode {
+private:
+	void printQueryTreeHelper(QueryPlanNode *queryPlanNode);
 public:
 	QueryPlanNode();
 	virtual ~QueryPlanNode();
 	virtual void printNode() =0;
+	void printQueryTree();
 
 	string outPipeName;
 	Schema outSchema;
+	QueryPlanNode * left = NULL;
+	QueryPlanNode * right = NULL;
 
 };
 
