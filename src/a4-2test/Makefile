@@ -9,8 +9,8 @@ endif
 
 all: clean main
 
-main : y.tab.o lex.yy.o AndListPermutationIterator.o Statistics.o main.o
-	$(CC) -o main y.tab.o lex.yy.o AndListPermutationIterator.o Statistics.o main.o -lfl
+main : y.tab.o lex.yy.o AndListPermutationIterator.o QueryPlanNode.o Statistics.o main.o
+	$(CC) -o main y.tab.o lex.yy.o AndListPermutationIterator.o  QueryPlanNode.o Statistics.o main.o -lfl
 	
 main.o : main.cc
 	$(CC) -g -c main.cc
@@ -32,6 +32,9 @@ a1test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFi
 	
 test.o: test.cc
 	$(CC) -g -c test.cc
+	
+QueryPlanNode.o: QueryPlanNode.cc
+	$(CC) -g -c QueryPlanNode.cc
 	
 a2-2test.o: a2-2test.cc
 	$(CC) -g -c a2-2test.cc
