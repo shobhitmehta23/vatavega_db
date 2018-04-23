@@ -1,10 +1,13 @@
 #include "QueryPlanNode.h"
 #include <vector>
 
+#include <cstring>
+
 void printSchema(Schema& schema);
 void printNodeBoundary();
 void printPipe(Pipe *pipe, bool ifInputPipe);
 char* getRelationName(TableList* table);
+char * mergeThreeString(char *str1, char *str2, char *str3);
 
 QueryPlanNode::QueryPlanNode(QueryNodeType nodeType) {
 	this->nodeType = nodeType;
@@ -107,9 +110,17 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 
 	// suck up the schema from the file
 	Schema* sch = new Schema("catalog", table->tableName); //FIXME hardcoded schema name
-	CNF myComparison;
+	int numberOfAtt = sch->GetNumAtts();
+	Attribute * attributes = sch->GetAtts();
+
+	for (int i = 0; i < numberOfAtt; i++) {
+		char * tempName = mergeThreeString(table->aliasAs, ".",
+				attributes[i].name);
+		attributes[i].name = tempName;
+	}
+
 	Record literal;
-	myComparison.GrowFromParseTree(currentAndListPtr, sch, literal);
+	cnf.GrowFromParseTree(currentAndListPtr, sch, literal);
 	outSchema = sch;
 }
 
@@ -164,104 +175,133 @@ JoinNode::JoinNode(QueryPlanNode* node1, QueryPlanNode* node2, bool doApply,
 
 	relNames = relations;
 
-	outputPipe = new Pipe(100, ++pipeIdCounter);
-outSchema=
-cnf=
-left=
-right=
+	//only execute while applying permanent changes.
+	if (doApply) {
+
+		outputPipe = new Pipe(100, ++pipeIdCounter);
+
+		int numberOfAtt1 = node1->outSchema->GetNumAtts();
+		int numberOfAtt2 = node2->outSchema->GetNumAtts();
+		Attribute * attributes[numberOfAtt1 + numberOfAtt2];
+		Attribute * attributes1 = node1->outSchema->GetAtts();
+
+		for (int i = 0; i < numberOfAtt1; i++) {
+			attributes[i] = attributes1[i];
+		}
+		for (int i = numberOfAtt1; i < numberOfAtt2 + numberOfAtt1; i++) {
+			attributes[i] = attributes1[i - numberOfAtt1];
+		}
+
+		outSchema->Schema(outputPipe->pipeId, numberOfAtt2 + numberOfAtt1,
+				attributes);
+
+		Record literal;
+		cnf.GrowFromParseTree(query, outSchema, literal);
+		left = node1;
+		right = node2;
+	}
 
 }
 
 void GroupByNode::printNode() {
-printNodeBoundary();
-cout << "GROUPBY OPERATION " << endl;
-printPipe(inputPipe, true);
-printPipe(outputPipe, false);
-printSchema(*outSchema);
-cout << "order maker: " << endl;
-orderMaker->Print();
-cout << "function: " << endl;
-function->Print();
-printNodeBoundary();
+	printNodeBoundary();
+	cout << "GROUPBY OPERATION " << endl;
+	printPipe(inputPipe, true);
+	printPipe(outputPipe, false);
+	printSchema(*outSchema);
+	cout << "order maker: " << endl;
+	orderMaker->Print();
+	cout << "function: " << endl;
+	function->Print();
+	printNodeBoundary();
 }
 
 void SumNode::printNode() {
-printNodeBoundary();
-cout << "SUM OPERATION " << endl;
-printPipe(inputPipe, true);
-printPipe(outputPipe, false);
-printSchema(*outSchema);
-cout << "function: " << endl;
-function->Print();
-printNodeBoundary();
+	printNodeBoundary();
+	cout << "SUM OPERATION " << endl;
+	printPipe(inputPipe, true);
+	printPipe(outputPipe, false);
+	printSchema(*outSchema);
+	cout << "function: " << endl;
+	function->Print();
+	printNodeBoundary();
 }
 
 void ProjectNode::printNode() {
-printNodeBoundary();
-cout << "PROJECT OPERATION " << endl;
-printPipe(inputPipe, true);
-printPipe(outputPipe, false);
-printSchema(*outSchema);
-cout << "attributes to keep" << endl;
-for (int i = 0; i < numOfAttsOutput; i++) {
-	cout << keepme[i] << '\t';
-}
-cout << endl;
-printNodeBoundary();
+	printNodeBoundary();
+	cout << "PROJECT OPERATION " << endl;
+	printPipe(inputPipe, true);
+	printPipe(outputPipe, false);
+	printSchema(*outSchema);
+	cout << "attributes to keep" << endl;
+	for (int i = 0; i < numOfAttsOutput; i++) {
+		cout << keepme[i] << '\t';
+	}
+	cout << endl;
+	printNodeBoundary();
 }
 
 void distinctNode::printNode() {
-printNodeBoundary();
-cout << "DUPLICATE REMOVAL OPERATION " << endl;
-printPipe(inputPipe, true);
-printPipe(outputPipe, false);
-printSchema(*outSchema);
-printNodeBoundary();
+	printNodeBoundary();
+	cout << "DUPLICATE REMOVAL OPERATION " << endl;
+	printPipe(inputPipe, true);
+	printPipe(outputPipe, false);
+	printSchema(*outSchema);
+	printNodeBoundary();
 }
 
 void writeOutNode::printNode() {
-printNodeBoundary();
-cout << "WRITE OUT OPERATION " << endl;
-printPipe(inputPipe, true);
-printSchema(*outSchema);
-printNodeBoundary();
+	printNodeBoundary();
+	cout << "WRITE OUT OPERATION " << endl;
+	printPipe(inputPipe, true);
+	printSchema(*outSchema);
+	printNodeBoundary();
 }
 
 void printSchema(Schema& schema) {
-cout << "Output Schema" << endl;
-int numberOfAtt = schema.GetNumAtts();
+	cout << "Output Schema" << endl;
+	int numberOfAtt = schema.GetNumAtts();
 
-Attribute *att = schema.GetAtts();
-for (int i = 0; i < numberOfAtt; i++) {
-	string temp = "Att" + to_string((i + 1)) + ":\t";
+	Attribute *att = schema.GetAtts();
+	for (int i = 0; i < numberOfAtt; i++) {
+		string temp = "Att" + to_string((i + 1)) + ":\t";
 
-	switch (att[i].myType) {
-	case Double:
-		cout << "double ";
-		break;
-	case Int:
-		cout << "int ";
-		break;
-	case String:
-		cout << "string ";
-		break;
+		switch (att[i].myType) {
+		case Double:
+			cout << "double ";
+			break;
+		case Int:
+			cout << "int ";
+			break;
+		case String:
+			cout << "string ";
+			break;
+		}
 	}
-}
 }
 
 void printPipe(Pipe *pipe, bool ifInputPipe) {
-if (ifInputPipe) {
-	cout << "Input pipe ID ";
-} else {
-	cout << "Output pipe ID ";
-}
-cout << pipe->getPipeId() << endl;
+	if (ifInputPipe) {
+		cout << "Input pipe ID ";
+	} else {
+		cout << "Output pipe ID ";
+	}
+	cout << pipe->getPipeId() << endl;
 }
 
 void printNodeBoundary() {
-cout << "***************************" << endl;
+	cout << "***************************" << endl;
 }
 
 char* getRelationName(TableList* table) {
-return table->aliasAs == NULL ? table->tableName : table->aliasAs;
+	return table->aliasAs == NULL ? table->tableName : table->aliasAs;
+}
+
+char * mergeThreeString(char *str1, char *str2, char *str3) {
+	char *result = (char *) malloc(
+			(strlen(str1) + strlen(str2) + strlen(str3) + 1) * sizeof(char));
+	strcpy(result, str1);
+	strcat(result, str2);
+	strcat(result, str3);
+	return result;
 }
