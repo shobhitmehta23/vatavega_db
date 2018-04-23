@@ -1,10 +1,3 @@
-/*
- * QueryPlanNode.h
- *
- *  Created on: Apr 22, 2018
- *
- */
-
 #ifndef QUERYPLANNODE_H_
 #define QUERYPLANNODE_H_
 
@@ -14,13 +7,18 @@
 #include "Statistics.h"
 
 class QueryPlanNode {
+private:
+	void printQueryTreeHelper(QueryPlanNode *queryPlanNode);
 public:
 	QueryPlanNode();
 	virtual ~QueryPlanNode();
 	virtual void printNode() =0;
+	void printQueryTree();
 
 	string outPipeName;
 	Schema outSchema;
+	QueryPlanNode * left = NULL;
+	QueryPlanNode * right = NULL;
 
 };
 
