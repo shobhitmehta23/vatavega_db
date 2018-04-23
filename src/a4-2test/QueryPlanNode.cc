@@ -6,7 +6,6 @@ void printPipe(Pipe *pipe, bool ifInputPipe);
 
 QueryPlanNode::QueryPlanNode() {
 	// TODO Auto-generated constructor stub
-
 }
 
 QueryPlanNode::~QueryPlanNode() {
@@ -31,7 +30,7 @@ void SelectFileNode::printNode() {
 	printNodeBoundary();
 	cout << "SELECT FILE OPERATION ON  " << string(table->tableName) << endl;
 	printPipe(outputPipe, false);
-	printSchema(outSchema);
+	printSchema(*outSchema);
 	// print cnf
 	printNodeBoundary();
 }
@@ -45,11 +44,11 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 	AndList* currentAndListPtr = selectAndList;
 	while (ands != NULL) {
 		bool goToNextAnd = false;
-		OrList ors = ands->left;
+		OrList* ors = ands->left;
 		while (ors != NULL) {
-			if (ors.left != NULL) {
-				Operand *left = ors.left->left;
-				Operand *right = ors.left->right;
+			if (ors->left != NULL) {
+				Operand *left = ors->left->left;
+				Operand *right = ors->left->right;
 
 				if (left->code == NAME && right->code == NAME) {
 					goToNextAnd = true;
@@ -75,7 +74,7 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 				}
 
 			}
-			ors = ors.rightOr;
+			ors = ors->rightOr;
 		}
 		if (goToNextAnd) {
 			ands = ands->rightAnd;
@@ -99,12 +98,12 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 	}
 	currentAndListPtr->rightAnd = NULL;
 
-	char * ch[] = { tableName.c_str() };
+	char * ch[] = { (char*) tableName.c_str() };
 	//calculate and apply the estimates
 	stats.Apply(currentAndListPtr, ch, 1);
 
 	// suck up the schema from the file
-		Schema sch ("catalog", table->tableName); //FIXME hardcoded schema name
+	Schema sch("catalog", table->tableName); //FIXME hardcoded schema name
 	CNF myComparison;
 	Record literal;
 	myComparison.GrowFromParseTree(currentAndListPtr, &sch, literal);
@@ -115,7 +114,7 @@ void SelectPipeNode::printNode() {
 	cout << "SELECT PIPE OPERATION " << endl;
 	printPipe(inputPipe, true);
 	printPipe(outputPipe, false);
-	printSchema(outSchema);
+	printSchema(*outSchema);
 	// print cnf
 	printNodeBoundary();
 }
@@ -126,7 +125,7 @@ void JoinNode::printNode() {
 	printPipe(inputPipe1, true);
 	printPipe(inputPipe2, true);
 	printPipe(outputPipe, false);
-	printSchema(outSchema);
+	printSchema(*outSchema);
 	// print cnf
 	printNodeBoundary();
 }
@@ -136,7 +135,7 @@ void GroupByNode::printNode() {
 	cout << "GROUPBY OPERATION " << endl;
 	printPipe(inputPipe, true);
 	printPipe(outputPipe, false);
-	printSchema(outSchema);
+	printSchema(*outSchema);
 	cout << "order maker: " << endl;
 	orderMaker->Print();
 	cout << "function: " << endl;
@@ -149,7 +148,7 @@ void SumNode::printNode() {
 	cout << "SUM OPERATION " << endl;
 	printPipe(inputPipe, true);
 	printPipe(outputPipe, false);
-	printSchema(outSchema);
+	printSchema(*outSchema);
 	cout << "function: " << endl;
 	function->Print();
 	printNodeBoundary();
@@ -160,7 +159,7 @@ void ProjectNode::printNode() {
 	cout << "PROJECT OPERATION " << endl;
 	printPipe(inputPipe, true);
 	printPipe(outputPipe, false);
-	printSchema(outSchema);
+	printSchema(*outSchema);
 	cout << "attributes to keep" << endl;
 	for (int i = 0; i < numOfAttsOutput; i++) {
 		cout << keepme[i] << '\t';
@@ -174,7 +173,7 @@ void distinctNode::printNode() {
 	cout << "DUPLICATE REMOVAL OPERATION " << endl;
 	printPipe(inputPipe, true);
 	printPipe(outputPipe, false);
-	printSchema(outSchema);
+	printSchema(*outSchema);
 	printNodeBoundary();
 }
 
@@ -182,7 +181,7 @@ void writeOutNode::printNode() {
 	printNodeBoundary();
 	cout << "WRITE OUT OPERATION " << endl;
 	printPipe(inputPipe, true);
-	printSchema(outSchema);
+	printSchema(*outSchema);
 	printNodeBoundary();
 }
 
