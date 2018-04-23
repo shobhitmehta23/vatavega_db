@@ -103,10 +103,11 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 	stats.Apply(currentAndListPtr, ch, 1);
 
 	// suck up the schema from the file
-	Schema sch("catalog", table->tableName); //FIXME hardcoded schema name
+	Schema* sch = new Schema("catalog", table->tableName); //FIXME hardcoded schema name
 	CNF myComparison;
 	Record literal;
-	myComparison.GrowFromParseTree(currentAndListPtr, &sch, literal);
+	myComparison.GrowFromParseTree(currentAndListPtr, sch, literal);
+	outSchema = sch;
 }
 
 void SelectPipeNode::printNode() {

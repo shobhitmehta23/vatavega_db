@@ -18,7 +18,7 @@ public:
 	void printQueryTree();
 
 	string outPipeName;
-	Schema outSchema;
+	Schema* outSchema = NULL;
 	QueryPlanNode * left = NULL;
 	QueryPlanNode * right = NULL;
 
@@ -33,6 +33,7 @@ public:
 	TableList* table;
 	TableInfo* tableInfo;
 	Pipe *outputPipe;
+	CNF selectCNF;
 
 	SelectFileNode(TableList* tbl, AndList* andList, Statistics &stats) {
 		this->table = tbl;
