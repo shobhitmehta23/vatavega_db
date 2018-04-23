@@ -20,6 +20,8 @@ extern "C" {
 int yyparse(void);   // defined in y.tab.c
 }
 
+void segregateJoinsAndMultiTableSelects(vector<AndList*> &multiTableSelects);
+
 int main() {
 
 	yyparse();
@@ -39,7 +41,61 @@ int main() {
 		tables = tables->next;
 	}
 
-	//Now start processing Joins
+	vector<AndList*> multiTableSelects;
+	//check if joins exist.
+	if (nodes.size() > 1) {
+		//Now start processing Joins
 
+		//segregate joins and selects on joins.
+		segregateJoinsAndMultiTableSelects(multiTableSelects);
+
+	}
+
+	//process select with OR and two tables (suppose to be on a joined table), this should be done along with joins.
+
+	//process groupby and sum
+
+	//process projection
+
+	//process distinct
+
+	//process write out
+}
+
+void segregateJoinsAndMultiTableSelects(vector<AndList*> &multiTableSelects) {
+	AndList* andList = boolean;
+	while (andList != NULL) {
+		bool hasSelects = false;
+		OrList* orList = andList->left;
+		while (orList != NULL) {
+			ComparisonOp* cmp = orList->left;
+			Operand* op1 = cmp->left;
+			Operand* op2 = cmp->right;
+
+			if (op1->code == NAME && op2->code == NAME) {
+				orList = orList->rightOr;
+				continue;
+			}
+			hasSelects = true;
+			break;
+		}
+		if (hasSelects) {
+			AndList* selectAnd = andList;
+
+			if (andList->rightAnd != NULL) {
+				andList->left = andList->rightAnd->left;
+				andList->rightAnd = andList->rightAnd->rightAnd;
+
+			} else {
+				andList = andList->rightAnd;
+			}
+			selectAnd->rightAnd = NULL;
+			multiTableSelects.push_back(selectAnd);
+			continue;
+		}
+
+		andList = andList->rightAnd;
+
+	}
 }
 
