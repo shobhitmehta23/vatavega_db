@@ -28,7 +28,7 @@ private:
 public:
 	DBFile inputFile;
 	TableList* table;
-	TableInfo tableInfo;
+	TableInfo* tableInfo;
 
 	SelectFileNode(TableList* tbl, AndList* andList, Statistics &stats) {
 		this->table = tbl;

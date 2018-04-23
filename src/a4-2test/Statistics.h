@@ -74,8 +74,6 @@ public:
 class Statistics {
 
 private:
-	unordered_map<int, TableInfo *> group_to_table_info_map;
-	unordered_map<string, int> relation_to_group_map;
 	int group_no = 1;
 
 	double getRowsinJoinedTableContainingGivenRelation(string relName);
@@ -85,9 +83,12 @@ private:
 			Operand* op, string &relation);
 	void checkIfAttributeExistsInGivenRelations(set<int> groupIds, Operand* op);
 	void updateTableInfoMaps(TableInfo * table_info);
-	set<int> getGroupIdsForRelations(string relation_names[], int number_of_relation);
+	set<int> getGroupIdsForRelations(string relation_names[],
+			int number_of_relation);
 
 public:
+	unordered_map<int, TableInfo *> group_to_table_info_map;
+	unordered_map<string, int> relation_to_group_map;
 	Statistics();
 	Statistics(Statistics &copyMe);	 // Performs deep copy
 	~Statistics();
