@@ -102,6 +102,12 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 	char * ch[] = { tableName.c_str() };
 	//calculate and apply the estimates
 	stats.Apply(currentAndListPtr, ch, 1);
+
+	// suck up the schema from the file
+		Schema sch ("catalog", table->tableName); //FIXME hardcoded schema name
+	CNF myComparison;
+	Record literal;
+	myComparison.GrowFromParseTree(currentAndListPtr, &sch, literal);
 }
 
 void SelectPipeNode::printNode() {
