@@ -501,3 +501,91 @@ set<int> Statistics::getGroupIdsForRelations(string relation_names[],
 
 	return group_ids;
 }
+
+
+void Statistics::writeStatisticsForTPCH() {
+
+	char table_name[8][9] = { "region", "nation", "part", "supplier", "partsupp",
+			"customer", "orders", "lineitem" };
+	Statistics s;
+	s.AddRel(table_name[0], 5);
+	s.AddRel(table_name[1], 25);
+	s.AddRel(table_name[2], 200000);
+	s.AddRel(table_name[3], 10000);
+	s.AddRel(table_name[4], 800000);
+	s.AddRel(table_name[5], 150000);
+	s.AddRel(table_name[6], 1500000);
+	s.AddRel(table_name[7], 6001215);
+
+	// region
+	s.AddAtt(table_name[0], "r_regionkey", 5); // r_regionkey=5
+	s.AddAtt(table_name[0], "r_name", 5); // r_name=5
+	s.AddAtt(table_name[0], "r_comment", 5); // r_comment=5
+	// nation
+	s.AddAtt(table_name[1], "n_nationkey", 25); // n_nationkey=25
+	s.AddAtt(table_name[1], "n_name", 25);  // n_name=25
+	s.AddAtt(table_name[1], "n_regionkey", 5);  // n_regionkey=5
+	s.AddAtt(table_name[1], "n_comment", 25);  // n_comment=25
+	// part
+	s.AddAtt(table_name[2], "p_partkey", 200000); // p_partkey=200000
+	s.AddAtt(table_name[2], "p_name", 200000); // p_name=199996
+	s.AddAtt(table_name[2], "p_mfgr", 200000); // p_mfgr=5
+	s.AddAtt(table_name[2], "p_brand", 200000); // p_brand=25
+	s.AddAtt(table_name[2], "p_type", 200000); // p_type=150
+	s.AddAtt(table_name[2], "p_size", 200000); // p_size=50
+	s.AddAtt(table_name[2], "p_container", 200000); // p_container=40
+	s.AddAtt(table_name[2], "p_retailprice", 200000); // p_retailprice=20899
+	s.AddAtt(table_name[2], "p_comment", 200000); // p_comment=127459
+	// supplier
+	s.AddAtt(table_name[3], "s_suppkey", 10000);
+	s.AddAtt(table_name[3], "s_name", 10000);
+	s.AddAtt(table_name[3], "s_address", 10000);
+	s.AddAtt(table_name[3], "s_nationkey", 25);
+	s.AddAtt(table_name[3], "s_phone", 10000);
+	s.AddAtt(table_name[3], "s_acctbal", 9955);
+	s.AddAtt(table_name[3], "s_comment", 10000);
+	// partsupp
+	s.AddAtt(table_name[4], "ps_partkey", 200000);
+	s.AddAtt(table_name[4], "ps_suppkey", 10000);
+	s.AddAtt(table_name[4], "ps_availqty", 9999);
+	s.AddAtt(table_name[4], "ps_supplycost", 99865);
+	s.AddAtt(table_name[4], "ps_comment", 799123);
+	// customer
+	s.AddAtt(table_name[5], "c_custkey", 150000);
+	s.AddAtt(table_name[5], "c_name", 150000);
+	s.AddAtt(table_name[5], "c_address", 150000);
+	s.AddAtt(table_name[5], "c_nationkey", 25);
+	s.AddAtt(table_name[5], "c_phone", 150000);
+	s.AddAtt(table_name[5], "c_acctbal", 140187);
+	s.AddAtt(table_name[5], "c_mktsegment", 5);
+	s.AddAtt(table_name[5], "c_comment", 149965);
+	// orders
+	s.AddAtt(table_name[6], "o_orderkey", 1500000);
+	s.AddAtt(table_name[6], "o_custkey", 99996);
+	s.AddAtt(table_name[6], "o_orderstatus", 3);
+	s.AddAtt(table_name[6], "o_totalprice", 1464556);
+	s.AddAtt(table_name[6], "o_orderdate", 2406);
+	s.AddAtt(table_name[6], "o_orderpriority", 5);
+	s.AddAtt(table_name[6], "o_clerk", 1000);
+	s.AddAtt(table_name[6], "o_shippriority", 1);
+	s.AddAtt(table_name[6], "o_comment", 1478684);
+	// lineitem
+	s.AddAtt(table_name[7], "l_orderkey", 1500000);
+	s.AddAtt(table_name[7], "l_partkey", 200000);
+	s.AddAtt(table_name[7], "l_suppkey", 10000);
+	s.AddAtt(table_name[7], "l_linenumber", 7);
+	s.AddAtt(table_name[7], "l_quantity", 50);
+	s.AddAtt(table_name[7], "l_extendedprice", 933900);
+	s.AddAtt(table_name[7], "l_discount", 11);
+	s.AddAtt(table_name[7], "l_tax", 9);
+	s.AddAtt(table_name[7], "l_returnflag", 3);
+	s.AddAtt(table_name[7], "l_linestatus", 2);
+	s.AddAtt(table_name[7], "l_shipdate", 2526);
+	s.AddAtt(table_name[7], "l_commitdate", 2466);
+	s.AddAtt(table_name[7], "l_receiptdate", 2554);
+	s.AddAtt(table_name[7], "l_shipinstruct", 4);
+	s.AddAtt(table_name[7], "l_shipmode", 7);
+	s.AddAtt(table_name[7], "l_comment", 4501941);
+
+	s.Write("stats.txt");
+}

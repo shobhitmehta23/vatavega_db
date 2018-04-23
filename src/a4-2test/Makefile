@@ -9,8 +9,8 @@ endif
 
 all: clean main
 
-main : y.tab.o lex.yy.o AndListPermutationIterator.o main.o
-	$(CC) -o main y.tab.o lex.yy.o AndListPermutationIterator.o main.o -lfl
+main : y.tab.o lex.yy.o AndListPermutationIterator.o Statistics.o main.o
+	$(CC) -o main y.tab.o lex.yy.o AndListPermutationIterator.o Statistics.o main.o -lfl
 	
 main.o : main.cc
 	$(CC) -g -c main.cc

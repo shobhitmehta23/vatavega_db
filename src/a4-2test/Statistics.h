@@ -98,6 +98,7 @@ public:
 
 	void Read(char *fromWhere);
 	void Write(char *fromWhere);
+	static void writeStatisticsForTPCH();
 
 	void Apply(struct AndList *parseTree, char *relNames[], int numToJoin);
 	double Estimate(struct AndList *parseTree, char **relNames, int numToJoin);
