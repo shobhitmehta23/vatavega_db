@@ -8,19 +8,32 @@
 #include "Pipe.h"
 #include "Function.h"
 
+enum QueryNodeType {
+	Select_File_Node,
+	Select_Pipe_Node,
+	Join_Node,
+	GroupBy_Node,
+	Sum_Node,
+	Project_Node,
+	distinct_Node,
+	writeOut_Node
+};
 class QueryPlanNode {
 private:
 	void printQueryTreeHelper(QueryPlanNode *queryPlanNode);
 public:
-	QueryPlanNode();
+	QueryPlanNode(QueryNodeType nodeType);
 	virtual ~QueryPlanNode();
-	virtual void printNode() =0;
+	virtual void printNode();
 	void printQueryTree();
 
-	string outPipeName;
 	Schema* outSchema = NULL;
 	QueryPlanNode * left = NULL;
 	QueryPlanNode * right = NULL;
+	QueryNodeType nodeType;
+	static int pipeIdCounter = 0;
+	Pipe *outputPipe;
+	CNF cnf;
 
 };
 
@@ -34,8 +47,10 @@ public:
 	TableInfo* tableInfo;
 	Pipe *outputPipe;
 	CNF selectCNF;
+	double estimate;
 
-	SelectFileNode(TableList* tbl, AndList* andList, Statistics &stats) {
+	SelectFileNode(TableList* tbl, AndList* andList, Statistics &stats) :
+			QueryPlanNode(Select_Pipe_Node) {
 		this->table = tbl;
 		char* tableName =
 				table->aliasAs == NULL ? table->tableName : table->aliasAs;
@@ -46,27 +61,34 @@ public:
 				stats.group_to_table_info_map[stats.relation_to_group_map[string(
 						tableName)]];
 		applySelectCondition(andList, stats);
+		outputPipe = new Pipe(100, ++pipeIdCounter);
+		estimate = 0;
 	}
-	~SelectFileNode(){};
+	~SelectFileNode() {
+	}
+	;
 	void printNode();
 
 };
 
 class SelectPipeNode: public QueryPlanNode {
+public:
 	Pipe *inputPipe;
-	Pipe *outputPipe;
-	CNF selectCNF;
+
 	SelectPipeNode();
 	~SelectPipeNode();
 	void printNode();
 };
 
 class JoinNode: public QueryPlanNode {
+public:
 	Pipe *inputPipe1;
 	Pipe *inputPipe2;
-	Pipe *outputPipe;
-	CNF selectCNF;
-	JoinNode();
+	double estimate;
+	vector<char*> relNames;
+
+	JoinNode(QueryPlanNode* node1, QueryPlanNode* node2, bool doApply,
+			Statistics &stats, AndList* query);
 	~JoinNode();
 	void printNode();
 };

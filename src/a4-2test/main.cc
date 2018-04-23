@@ -43,11 +43,14 @@ int main() {
 
 	vector<AndList*> multiTableSelects;
 	//check if joins exist.
+	//Join nodes and join dependent selects are only possible if joins exist. Else just ignore them.
 	if (nodes.size() > 1) {
 		//Now start processing Joins
 
 		//segregate joins and selects on joins.
 		segregateJoinsAndMultiTableSelects(multiTableSelects);
+
+
 
 	}
 
