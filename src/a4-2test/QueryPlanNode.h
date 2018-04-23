@@ -1,10 +1,3 @@
-/*
- * QueryPlanNode.h
- *
- *  Created on: Apr 22, 2018
- *
- */
-
 #ifndef QUERYPLANNODE_H_
 #define QUERYPLANNODE_H_
 
