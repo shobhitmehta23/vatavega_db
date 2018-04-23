@@ -88,7 +88,7 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 			currentAndListPtr->rightAnd = ands;
 			currentAndListPtr = currentAndListPtr->rightAnd;
 		}
-
+		//remove the AND clause from the Andlist.
 		if (ands->rightAnd != NULL) {
 			ands->left = ands->rightAnd->left;
 			ands->rightAnd = ands->rightAnd->rightAnd;
@@ -99,7 +99,7 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 	}
 	currentAndListPtr->rightAnd = NULL;
 
-	char * ch[] = {tableName.c_str()};
+	char * ch[] = { tableName.c_str() };
 	//calculate and apply the estimates
 	stats.Apply(currentAndListPtr, ch, 1);
 }
