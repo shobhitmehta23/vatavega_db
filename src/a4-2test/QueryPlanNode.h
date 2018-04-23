@@ -5,6 +5,8 @@
 #include "Schema.h"
 #include "ParseTree.h"
 #include "Statistics.h"
+#include "Pipe.h"
+#include "Function.h"
 
 class QueryPlanNode {
 private:
@@ -29,6 +31,7 @@ public:
 	DBFile inputFile;
 	TableList* table;
 	TableInfo* tableInfo;
+	Pipe *outputPipe;
 
 	SelectFileNode(TableList* tbl, AndList* andList, Statistics &stats) {
 		this->table = tbl;
@@ -42,35 +45,59 @@ public:
 };
 
 class SelectPipeNode: public QueryPlanNode {
+	Pipe *inputPipe;
+	Pipe *outputPipe;
 	SelectPipeNode();
 	~SelectPipeNode();
 	void printNode();
 };
 
 class JoinNode: public QueryPlanNode {
+	Pipe *inputPipe1;
+	Pipe *inputPipe2;
+	Pipe *outputPipe;
 	JoinNode();
 	~JoinNode();
 	void printNode();
 };
 
 class GroupByNode: public QueryPlanNode {
+	Pipe *inputPipe;
+	Pipe *outputPipe;
+	OrderMaker * orderMaker;
+	Function * function;
 	GroupByNode();
 	~GroupByNode();
 	void printNode();
 };
 class SumNode: public QueryPlanNode {
+	Pipe *inputPipe;
+	Pipe *outputPipe;
+	Function * function;
 	SumNode();
 	~SumNode();
 	void printNode();
 };
 class ProjectNode: public QueryPlanNode {
+	Pipe *inputPipe;
+	Pipe *outputPipe;
+	int *keepme;
+	int numOfAttsOutput;
 	ProjectNode();
 	~ProjectNode();
 	void printNode();
 };
 class distinctNode: public QueryPlanNode {
+	Pipe *inputPipe;
+	Pipe *outputPipe;
 	distinctNode();
 	~distinctNode();
+	void printNode();
+};
+class writeOutNode: public QueryPlanNode {
+	Pipe *inputPipe;
+	writeOutNode();
+	~writeOutNode();
 	void printNode();
 };
 #endif /* QUERYPLANNODE_H_ */

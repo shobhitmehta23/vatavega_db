@@ -1,5 +1,9 @@
 #include "QueryPlanNode.h"
 
+void printSchema(Schema& schema);
+void printNodeBoundary();
+void printPipe(Pipe *pipe, bool ifInputPipe);
+
 QueryPlanNode::QueryPlanNode() {
 	// TODO Auto-generated constructor stub
 
@@ -24,7 +28,12 @@ void QueryPlanNode::printQueryTreeHelper(QueryPlanNode *queryPlanNode) {
 }
 
 void SelectFileNode::printNode() {
-
+	printNodeBoundary();
+	cout << "SELECT FILE OPERATION ON  " << string(table->tableName) << endl;
+	printPipe(outputPipe, false);
+	printSchema(outSchema);
+	// print cnf
+	printNodeBoundary();
 }
 
 void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
@@ -57,25 +66,107 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 }
 
 void SelectPipeNode::printNode() {
-
+	printNodeBoundary();
+	cout << "SELECT PIPE OPERATION " << endl;
+	printPipe(inputPipe, true);
+	printPipe(outputPipe, false);
+	printSchema(outSchema);
+	// print cnf
+	printNodeBoundary();
 }
 
 void JoinNode::printNode() {
-
+	printNodeBoundary();
+	cout << "JOIN OPERATION " << endl;
+	printPipe(inputPipe1, true);
+	printPipe(inputPipe2, true);
+	printPipe(outputPipe, false);
+	printSchema(outSchema);
+	// print cnf
+	printNodeBoundary();
 }
 
 void GroupByNode::printNode() {
-
+	printNodeBoundary();
+	cout << "GROUPBY OPERATION " << endl;
+	printPipe(inputPipe, true);
+	printPipe(outputPipe, false);
+	printSchema(outSchema);
+	cout << "order maker: " << endl;
+	orderMaker->Print();
+	cout << "function: " << endl;
+	function->Print();
+	printNodeBoundary();
 }
 
 void SumNode::printNode() {
-
+	printNodeBoundary();
+	cout << "SUM OPERATION " << endl;
+	printPipe(inputPipe, true);
+	printPipe(outputPipe, false);
+	printSchema(outSchema);
+	cout << "function: " << endl;
+	function->Print();
+	printNodeBoundary();
 }
 
 void ProjectNode::printNode() {
-
+	printNodeBoundary();
+	cout << "PROJECT OPERATION " << endl;
+	printPipe(inputPipe, true);
+	printPipe(outputPipe, false);
+	printSchema(outSchema);
+	// print attributes to keep
+	printNodeBoundary();
 }
 
 void distinctNode::printNode() {
+	printNodeBoundary();
+	cout << "DUPLICATE REMOVAL OPERATION " << endl;
+	printPipe(inputPipe, true);
+	printPipe(outputPipe, false);
+	printSchema(outSchema);
+	printNodeBoundary();
+}
 
+void writeOutNode::printNode() {
+	printNodeBoundary();
+	cout << "WRITE OUT OPERATION " << endl;
+	printPipe(inputPipe, true);
+	printSchema(outSchema);
+	printNodeBoundary();
+}
+
+void printSchema(Schema& schema) {
+	cout << "Output Schema" << endl;
+	int numberOfAtt = schema.numAtts;
+
+	for (int i = 0; i < numberOfAtt; i++) {
+		string temp = "Att" + (i + 1) + ":\t";
+
+		switch (schema.myAtts[i].myType) {
+		case Double:
+			cout << "double ";
+			break;
+		case Int:
+			cout << "int ";
+			break;
+		case String:
+			cout << "string ";
+			break;
+		}
+	}
+}
+
+void printPipe(Pipe *pipe, bool ifInputPipe) {
+	if (ifInputPipe) {
+		cout << "Input pipe ID ";
+	} else {
+		cout << "Output pipe ID ";
+	}
+	cout << pipe->getPipeId() << endl;
+}
+
+void printNodeBoundary() {
+	cout << "***************************" << endl;
 }
