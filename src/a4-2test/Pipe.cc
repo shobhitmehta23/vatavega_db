@@ -27,6 +27,32 @@ Pipe :: Pipe (int bufferSize) {
 	done = 0;
 }
 
+Pipe :: Pipe (int bufferSize, int pipeId) {
+
+	this->pipeId = pipeId;
+
+	// set up the mutex assoicated with the pipe
+	pthread_mutex_init (&pipeMutex, NULL);
+
+	// set up the condition variables associated with the pipe
+	pthread_cond_init (&producerVar, NULL);
+	pthread_cond_init (&consumerVar, NULL);
+
+	// set up the pipe's buffer
+	buffered = new (std::nothrow) Record[bufferSize];
+	if (buffered == NULL)
+	{
+		cout << "ERROR : Not enough memory. EXIT !!!\n";
+		exit(1);
+	}
+
+	totSpace = bufferSize;
+	firstSlot = lastSlot = 0;
+
+	// note that the pipe has not yet been turned off
+	done = 0;
+}
+
 Pipe :: ~Pipe () {
 	// free everything up!
 	delete [] buffered;

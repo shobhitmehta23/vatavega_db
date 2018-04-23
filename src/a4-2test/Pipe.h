@@ -15,6 +15,7 @@ private:
 	int firstSlot;
 	int lastSlot;
 	int totSpace;
+	int pipeId;
 
 	int done;
 
@@ -29,7 +30,8 @@ public:
 
 	// this sets up the pipeline; the parameter is the number of
 	// records to buffer
-	Pipe (int bufferSize);	
+	Pipe (int bufferSize);
+	Pipe (int bufferSize, int pipeId);
 	virtual ~Pipe();
 
 	// This inserts a record into the pipeline; note that if the
@@ -52,6 +54,9 @@ public:
 	// returns the buffer size of the pipe
 	int getBufferSize();
 
+	int getPipeId() {
+		return pipeId;
+	}
 };
 
 #endif
