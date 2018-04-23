@@ -24,7 +24,9 @@ int main() {
 
 	yyparse();
 
+	Statistics::writeStatisticsForTPCH();
 	Statistics stats;
+	stats.Read("stats.txt");
 
 	vector<QueryPlanNode*> nodes;
 

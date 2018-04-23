@@ -31,12 +31,12 @@ public:
 
 class SelectFileNode: public QueryPlanNode {
 private:
-	void applySelectCondition(AndList andList, Statistics stats);
+	void applySelectCondition(AndList* andList, Statistics stats);
 public:
 	DBFile inputFile;
-	TableList table;
+	TableList* table;
 
-	SelectFileNode(TableList tbl, AndList andList, Statistics stats) {
+	SelectFileNode(TableList* tbl, AndList* andList, Statistics stats) {
 		this->table = tbl;
 		applySelectCondition(andList, stats);
 	}
