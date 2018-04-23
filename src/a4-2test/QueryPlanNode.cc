@@ -1,8 +1,11 @@
 #include "QueryPlanNode.h"
 
+#include <cstring>
+
 void printSchema(Schema& schema);
 void printNodeBoundary();
 void printPipe(Pipe *pipe, bool ifInputPipe);
+char * mergeThreeString(char *str1, char *str2, char *str3);
 
 QueryPlanNode::QueryPlanNode() {
 	// TODO Auto-generated constructor stub
@@ -105,6 +108,14 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 
 	// suck up the schema from the file
 	Schema* sch = new Schema("catalog", table->tableName); //FIXME hardcoded schema name
+	int numberOfAtt = sch->GetNumAtts();
+	Attribute * attributes = sch->GetAtts();
+
+	for (int i = 0; i < numberOfAtt; i++) {
+		char * tempName = mergeThreeString(table->aliasAs, ".", attributes[i].name);
+		attributes[i].name = tempName;
+	}
+
 	CNF myComparison;
 	Record literal;
 	myComparison.GrowFromParseTree(currentAndListPtr, sch, literal);
@@ -222,4 +233,12 @@ void printPipe(Pipe *pipe, bool ifInputPipe) {
 
 void printNodeBoundary() {
 	cout << "***************************" << endl;
+}
+
+char * mergeThreeString(char *str1, char *str2, char *str3) {
+	char *result = (char *) malloc((strlen(str1) + strlen(str2) + strlen(str3) + 1) * sizeof(char));
+	strcpy(result, str1);
+	strcat(result, str2);
+	strcat(result, str3);
+	return result;
 }
