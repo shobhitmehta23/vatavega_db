@@ -31,7 +31,8 @@ void SelectFileNode::printNode() {
 	cout << "SELECT FILE OPERATION ON  " << string(table->tableName) << endl;
 	printPipe(outputPipe, false);
 	printSchema(*outSchema);
-	// print cnf
+	cout << "Select CNF" << endl;
+	selectCNF.Print();
 	printNodeBoundary();
 }
 
@@ -116,7 +117,8 @@ void SelectPipeNode::printNode() {
 	printPipe(inputPipe, true);
 	printPipe(outputPipe, false);
 	printSchema(*outSchema);
-	// print cnf
+	cout << "Select CNF" << endl;
+	selectCNF.Print();
 	printNodeBoundary();
 }
 
@@ -127,7 +129,8 @@ void JoinNode::printNode() {
 	printPipe(inputPipe2, true);
 	printPipe(outputPipe, false);
 	printSchema(*outSchema);
-	// print cnf
+	cout << "Select CNF" << endl;
+	selectCNF.Print();
 	printNodeBoundary();
 }
 

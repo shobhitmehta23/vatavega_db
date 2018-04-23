@@ -55,6 +55,7 @@ public:
 class SelectPipeNode: public QueryPlanNode {
 	Pipe *inputPipe;
 	Pipe *outputPipe;
+	CNF selectCNF;
 	SelectPipeNode();
 	~SelectPipeNode();
 	void printNode();
@@ -64,6 +65,7 @@ class JoinNode: public QueryPlanNode {
 	Pipe *inputPipe1;
 	Pipe *inputPipe2;
 	Pipe *outputPipe;
+	CNF selectCNF;
 	JoinNode();
 	~JoinNode();
 	void printNode();
