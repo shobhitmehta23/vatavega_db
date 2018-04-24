@@ -46,7 +46,6 @@ public:
 	DBFile inputFile;
 	TableList* table;
 	TableInfo* tableInfo;
-	CNF selectCNF;
 	double estimate;
 
 	SelectFileNode(TableList* tbl, AndList* andList, Statistics &stats);
@@ -75,7 +74,6 @@ public:
 class SelectPipeNode: public QueryPlanNode {
 public:
 	Pipe *inputPipe;
-	CNF selectPipeCNF;
 
 	SelectPipeNode(vector<AndList*> multiTableSelects, JoinNode* node,
 			Statistics &stats);

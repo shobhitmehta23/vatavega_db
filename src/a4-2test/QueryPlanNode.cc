@@ -58,7 +58,7 @@ void SelectFileNode::printNode() {
 	printPipe(outputPipe, false);
 	printSchema(*outSchema);
 	cout << "Select CNF" << endl;
-	selectCNF.Print();
+	cnf.Print();
 	printNodeBoundary();
 }
 
