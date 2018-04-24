@@ -13,11 +13,11 @@ extern int distinctAtts; // 1 if there is a DISTINCT in a non-aggregate query
 extern int distinctFunc;  // 1 if there is a DISTINCT in an aggregate query
 
 QueryPlanNode * constructTree(QueryPlanNode * rootUptillNow);
-GroupByNode * constructGroupByNode(Schema * oldSchema, Pipe * oldPipe);
-SumNode * constructSumNode(Schema * oldSchema, Pipe * oldPipe);
-ProjectNode * constructProjectNode(Schema *oldSchema, Pipe * oldPipe);
-distinctNode * constructDistinctNode(Schema * oldSchema, Pipe * oldPipe);
-writeOutNode * constructWriteOutNode(Schema *oldSchema, Pipe * oldPipe);
+GroupByNode * constructGroupByNode(QueryPlanNode * child);
+SumNode * constructSumNode(QueryPlanNode * child);
+ProjectNode * constructProjectNode(QueryPlanNode * child);
+distinctNode * constructDistinctNode(QueryPlanNode * child);
+writeOutNode * constructWriteOutNode(QueryPlanNode * child);
 
 extern "C" struct YY_BUFFER_STATE *yy_scan_string(const char*);
 
@@ -107,15 +107,20 @@ void segregateJoinsAndMultiTableSelects(vector<AndList*> &multiTableSelects) {
 	}
 }
 
-writeOutNode * constructWriteOutNode(Schema *oldSchema, Pipe * oldPipe) {
+writeOutNode * constructWriteOutNode(QueryPlanNode * child) {
+	Schema *oldSchema = child->outSchema;
+	Pipe * oldPipe = child->outputPipe;
 	writeOutNode * write_out_node = new writeOutNode;
 	write_out_node->inputPipe = oldPipe;
 	write_out_node->outSchema = oldSchema;
 	write_out_node->filePointer = stdout;
+	write_out_node->left = child;
 	return write_out_node;
 }
 
-ProjectNode * constructProjectNode(Schema *oldSchema, Pipe * oldPipe) {
+ProjectNode * constructProjectNode(QueryPlanNode * child) {
+	Schema *oldSchema = child->outSchema;
+		Pipe * oldPipe = child->outputPipe;
 	ProjectNode * projectNode = new ProjectNode;
 	projectNode->inputPipe = oldPipe;
 	projectNode->outputPipe = new Pipe(100, ++QueryPlanNode::pipeIdCounter);
@@ -147,10 +152,13 @@ ProjectNode * constructProjectNode(Schema *oldSchema, Pipe * oldPipe) {
 	projectNode->outSchema = new Schema("dummy", selectedAttributes.size(),
 			selectedAttributes.data());
 
+	projectNode->left = child;
 	return projectNode;
 }
 
-distinctNode * constructDistinctNode(Schema * oldSchema, Pipe * oldPipe) {
+distinctNode * constructDistinctNode(QueryPlanNode * child) {
+	Schema *oldSchema = child->outSchema;
+		Pipe * oldPipe = child->outputPipe;
 	distinctNode * distinct_node = new distinctNode;
 	distinct_node->inputPipe = oldPipe;
 	distinct_node->outputPipe = new Pipe(100, ++QueryPlanNode::pipeIdCounter);
@@ -158,7 +166,9 @@ distinctNode * constructDistinctNode(Schema * oldSchema, Pipe * oldPipe) {
 	return distinct_node;
 }
 
-SumNode * constructSumNode(Schema * oldSchema, Pipe * oldPipe) {
+SumNode * constructSumNode(QueryPlanNode * child) {
+	Schema *oldSchema = child->outSchema;
+		Pipe * oldPipe = child->outputPipe;
 
 	if (finalFunction == NULL) {
 		return NULL;
@@ -179,10 +189,13 @@ SumNode * constructSumNode(Schema * oldSchema, Pipe * oldPipe) {
 	}
 
 	sumNode->outSchema = new Schema("dummy", 1, att);
+	sumNode->left = child;
 	return sumNode;
 }
 
-GroupByNode * constructGroupByNode(Schema * oldSchema, Pipe * oldPipe) {
+GroupByNode * constructGroupByNode(QueryPlanNode * child) {
+	Schema *oldSchema = child->outSchema;
+		Pipe * oldPipe = child->outputPipe;
 	if (groupingAtts == NULL) {
 		return NULL;
 	}
@@ -227,31 +240,30 @@ GroupByNode * constructGroupByNode(Schema * oldSchema, Pipe * oldPipe) {
 	groupByNode->orderMaker = orderMaker;
 	groupByNode->outSchema = new Schema("dummy", selectedAttributes.size(), selectedAttributes.data());
 
+	groupByNode->left = child;
 	return groupByNode;
 }
 
 QueryPlanNode * constructTree(QueryPlanNode * rootUptillNow) {
 	QueryPlanNode * root = rootUptillNow;
 
-	GroupByNode * groupByNode = constructGroupByNode(root->outSchema, root->outputPipe);
+	GroupByNode * groupByNode = constructGroupByNode(root);
 	if (groupByNode != NULL) {
 		root = groupByNode;
-		root = constructProjectNode(root->outSchema, root->outputPipe);
+		root = constructProjectNode(root);
 	} else {
-		SumNode * sumNode = constructSumNode(root->outSchema, root->outputPipe);
+		SumNode * sumNode = constructSumNode(root);
 		if (sumNode != NULL) {
 			root = sumNode;
 		} else {
-			root = constructProjectNode(root->outSchema, root->outputPipe);
+			root = constructProjectNode(root);
 		}
 	}
 
 	// at this point root node either points to project node or sum node.
 	if (distinctAtts || distinctFunc) {
-		root = constructDistinctNode(root->outSchema, root->outputPipe);
+		root = constructDistinctNode(root);
 	}
 
-	root = constructWriteOutNode(root->outSchema, root->outputPipe);
-
-	return root;
+	return constructWriteOutNode(root);
 }
