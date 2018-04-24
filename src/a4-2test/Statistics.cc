@@ -168,6 +168,37 @@ void Statistics::Apply(struct AndList *parseTree, char *relNames[],
 	set<int> groupIds = checkIfRelationsJoinedSatisfyConstraints(rel_names,
 			numToJoin);
 
+	//Cross-product
+	if ((!parseTree) && groupIds.size() > 1) {
+		//create a new table info for cross-prod
+		TableInfo * cross_product_table_info = new TableInfo();
+
+		//initialize num of tuple to 1 for multiplication
+		int num_of_cross_prod_tuples = 1;
+		//iterate over all the groups and combine them.
+		for (int groupId : groupIds) {
+			TableInfo* tb = group_to_table_info_map[groupId];
+
+			//Add all the attributes to the map, their distinct values will remain intact.
+			for (unordered_map<string, long>::iterator it =
+					tb->attributes.begin(); it != tb->attributes.end(); ++it) {
+
+				cross_product_table_info->attributes[it->first] = it->second;
+			}
+
+			//combine the relations involved in the groups.
+			cross_product_table_info->table_set.insert(tb->table_set.begin(),
+					tb->table_set.end());
+			num_of_cross_prod_tuples *= tb->no_of_tuples;
+		}
+
+		//update the number of tuples in the final cross-product
+		cross_product_table_info->no_of_tuples = num_of_cross_prod_tuples;
+
+		//Apply the cross product and uopdate the Statistics object.
+		updateTableInfoMaps(cross_product_table_info);
+	}
+
 	while (parseTree) {
 		OrList *orList = parseTree->left;
 		TableInfo* temp_table_info1 = NULL;
@@ -474,7 +505,8 @@ TableInfo* Statistics::checkIfAttributeExistsInGivenRelations(set<int> groupIds,
 	}
 
 //if (!found) {
-	cerr << "The attribute "<< string(op->value)<< " is not present in the given relations." << endl;
+	cerr << "The attribute " << string(op->value)
+			<< " is not present in the given relations." << endl;
 	exit(-1);
 //}
 }
@@ -502,11 +534,10 @@ set<int> Statistics::getGroupIdsForRelations(string relation_names[],
 	return group_ids;
 }
 
-
 void Statistics::writeStatisticsForTPCH() {
 
-	char table_name[8][9] = { "region", "nation", "part", "supplier", "partsupp",
-			"customer", "orders", "lineitem" };
+	char table_name[8][9] = { "region", "nation", "part", "supplier",
+			"partsupp", "customer", "orders", "lineitem" };
 	Statistics s;
 	s.AddRel(table_name[0], 5);
 	s.AddRel(table_name[1], 25);
