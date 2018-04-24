@@ -170,12 +170,15 @@ JoinNode::JoinNode(QueryPlanNode* node1, QueryPlanNode* node2, bool doApply,
 	std::copy(relations.begin(), relations.end(), arr);
 
 	estimate = stats.Estimate(query, arr, relations.size());
+
 	relNames = relations;
 
 	//only execute while applying permanent changes.
-	if (doApply) {
-		stats.Apply(query, arr, relations.size());
 
+	stats.Apply(query, arr, relations.size());
+	//TODO Test it
+	tableInfo = stats.group_to_table_info_map[stats.relation_to_group_map[relNames.at(0)]];
+	if (doApply) {
 		outputPipe = new Pipe(100, ++pipeIdCounter);
 
 		int numberOfAtt1 = node1->outSchema->GetNumAtts();

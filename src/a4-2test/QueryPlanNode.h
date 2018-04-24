@@ -87,6 +87,7 @@ public:
 	Pipe *inputPipe2;
 	double estimate;
 	vector<char*> relNames;
+	TableInfo* tableInfo;
 
 	JoinNode(QueryPlanNode* node1, QueryPlanNode* node2, bool doApply,
 			Statistics &stats, AndList* query);
