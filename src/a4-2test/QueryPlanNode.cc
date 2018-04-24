@@ -69,6 +69,7 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 			table->aliasAs == NULL ? table->tableName : table->aliasAs);
 	AndList* selectAndList = new AndList();
 	AndList* currentAndListPtr = selectAndList;
+	currentAndListPtr->left = NULL;
 	while (ands != NULL) {
 		bool goToNextAnd = false;
 		OrList* ors = ands->left;
@@ -104,6 +105,7 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 			ors = ors->rightOr;
 		}
 		if (goToNextAnd) {
+			prev = ands;
 			ands = ands->rightAnd;
 			continue;
 		}
@@ -119,6 +121,7 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 			ands->left = ands->rightAnd->left;
 			ands->rightAnd = ands->rightAnd->rightAnd;
 		} else {
+			prev->rightAnd = NULL;
 			break; // ands->rightAnd == NULL
 		}
 
@@ -185,6 +188,16 @@ JoinNode::JoinNode(QueryPlanNode* node1, QueryPlanNode* node2, bool doApply,
 			relations.push_back(tbl);
 		}
 	}
+
+	if (node2->nodeType == Select_File_Node) {
+		SelectFileNode* node = (SelectFileNode*) node2;
+		relations.push_back(getRelationName(node->table));
+	} else if (node2->nodeType == Join_Node) {
+		JoinNode* node = (JoinNode*) node2;
+		for (char* tbl : node->relNames) {
+			relations.push_back(tbl);
+		}
+	}
 	char** arr = relations.data();
 
 	estimate = stats.Estimate(query, arr, relations.size());
@@ -205,12 +218,13 @@ JoinNode::JoinNode(QueryPlanNode* node1, QueryPlanNode* node2, bool doApply,
 		int numberOfAtt2 = node2->outSchema->GetNumAtts();
 		Attribute attributes[numberOfAtt1 + numberOfAtt2];
 		Attribute * attributes1 = node1->outSchema->GetAtts();
+		Attribute * attributes2 = node2->outSchema->GetAtts();
 
 		for (int i = 0; i < numberOfAtt1; i++) {
 			attributes[i] = attributes1[i];
 		}
 		for (int i = numberOfAtt1; i < numberOfAtt2 + numberOfAtt1; i++) {
-			attributes[i] = attributes1[i - numberOfAtt1];
+			attributes[i] = attributes2[i - numberOfAtt1];
 		}
 
 		outSchema = new Schema(

@@ -31,9 +31,9 @@ int yyparse(void);   // defined in y.tab.c
 
 void segregateJoinsAndMultiTableSelects(vector<AndList*> &multiTableSelects);
 TableInfo* getTableInfo(QueryPlanNode* node);
-void popNextTwoJoinNodes(vector<QueryPlanNode*> copyList, AndList* clause,
+void popNextTwoJoinNodes(vector<QueryPlanNode*> &copyList, AndList* clause,
 		QueryPlanNode* &node1, QueryPlanNode* &node2);
-void findAndApplyBestJoinPlan(vector<QueryPlanNode*> nodes,
+void findAndApplyBestJoinPlan(vector<QueryPlanNode*> &nodes,
 		AndList* joinConditions, Statistics &stats);
 
 int main() {
@@ -71,14 +71,16 @@ int main() {
 
 		//segregate joins and selects on joins.
 		segregateJoinsAndMultiTableSelects(multiTableSelects);
-
 		//permute and find best join plan
 		findAndApplyBestJoinPlan(nodes, boolean, stats);
 		//process select with OR and two tables (suppose to be on a joined table), this should be done along with joins.
-		SelectPipeNode *node = new SelectPipeNode(multiTableSelects,
-				(JoinNode*) nodes.at(0), stats);
-		nodes.pop_back();
-		nodes.push_back(node);
+
+		if (multiTableSelects.size() > 0) {
+			SelectPipeNode *node = new SelectPipeNode(multiTableSelects,
+					(JoinNode*) nodes.at(0), stats);
+			nodes.pop_back();
+			nodes.push_back(node);
+		}
 
 	}
 
@@ -89,11 +91,15 @@ int main() {
 	//process distinct
 
 	//process write out
+	//cout<<"nodes.size(): "<< nodes.size()<<endl;
+	//nodes.at(0)->printQueryTree();
 
-	constructTree(nodes.at(0));
+	QueryPlanNode* root = constructTree(nodes.at(0));
+	root->printQueryTree();
+
 }
 
-void findAndApplyBestJoinPlan(vector<QueryPlanNode*> nodes,
+void findAndApplyBestJoinPlan(vector<QueryPlanNode*> &nodes,
 		AndList* joinConditions, Statistics &stats) {
 	//Get the next permutation
 	AndList* bestPermutation = NULL;
@@ -107,13 +113,17 @@ void findAndApplyBestJoinPlan(vector<QueryPlanNode*> nodes,
 
 		double temp_est = 0;
 		AndList* andList = permutation;
+
 		while (andList != NULL) {
 			QueryPlanNode* node1;
 			QueryPlanNode* node2;
 			popNextTwoJoinNodes(copyList, andList, node1, node2);
+			AndList* query = new AndList();
+			query->left = andList->left;
 			JoinNode* new_join_node = new JoinNode(node1, node2, false, st,
-					andList);
+					query);
 			copyList.push_back(new_join_node);
+
 			temp_est += new_join_node->estimate;
 			if (temp_est >= estimate) {
 				break;
@@ -150,7 +160,7 @@ void findAndApplyBestJoinPlan(vector<QueryPlanNode*> nodes,
 			}
 
 		}
-		permutations.getNext();
+		permutation = permutations.getNext();
 	}
 
 	//Apply the best permutation:
@@ -159,8 +169,12 @@ void findAndApplyBestJoinPlan(vector<QueryPlanNode*> nodes,
 		QueryPlanNode* node1;
 		QueryPlanNode* node2;
 		popNextTwoJoinNodes(nodes, bestPermutation, node1, node2);
+		SelectFileNode* n1 = (SelectFileNode*) node1;
+		SelectFileNode* n2 = (SelectFileNode*) node2;
+		AndList* query = new AndList();
+		query->left = bestPermutation->left;
 		JoinNode* new_join_node = new JoinNode(node1, node2, true, stats,
-				bestPermutation);
+				query);
 		nodes.push_back(new_join_node);
 
 		bestPermutation = bestPermutation->rightAnd;
@@ -183,7 +197,7 @@ void findAndApplyBestJoinPlan(vector<QueryPlanNode*> nodes,
 }
 
 //returns the two nodes from the vector involving the given AND condition.
-void popNextTwoJoinNodes(vector<QueryPlanNode*> copyList, AndList* clause,
+void popNextTwoJoinNodes(vector<QueryPlanNode*> &copyList, AndList* clause,
 		QueryPlanNode* &node1, QueryPlanNode* &node2) {
 	ComparisonOp* op = clause->left->left;
 	Operand* left = op->left;
@@ -238,6 +252,7 @@ TableInfo * getTableInfo(QueryPlanNode * node) {
 
 void segregateJoinsAndMultiTableSelects(vector<AndList*> &multiTableSelects) {
 	AndList* andList = boolean;
+	AndList* prev = NULL;
 	while (andList != NULL) {
 		bool hasSelects = false;
 		OrList* orList = andList->left;
@@ -254,20 +269,24 @@ void segregateJoinsAndMultiTableSelects(vector<AndList*> &multiTableSelects) {
 			break;
 		}
 		if (hasSelects) {
-			AndList* selectAnd = andList;
+			AndList* selectAnd = new AndList();
+			selectAnd->left = andList->left;
+			multiTableSelects.push_back(selectAnd);
 
 			if (andList->rightAnd != NULL) {
 				andList->left = andList->rightAnd->left;
 				andList->rightAnd = andList->rightAnd->rightAnd;
 
 			} else {
+				if (prev != NULL) {
+					prev->rightAnd = NULL;
+				}
 				andList = andList->rightAnd;
 			}
-			selectAnd->rightAnd = NULL;
-			multiTableSelects.push_back(selectAnd);
+
 			continue;
 		}
-
+		prev = andList;
 		andList = andList->rightAnd;
 
 	}
