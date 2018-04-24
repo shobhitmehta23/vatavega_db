@@ -474,7 +474,7 @@ TableInfo* Statistics::checkIfAttributeExistsInGivenRelations(set<int> groupIds,
 	}
 
 //if (!found) {
-	cerr << "the joins on table do not follow the required constraints" << endl;
+	cerr << "The attribute "<< string(op->value)<< " is not present in the given relations." << endl;
 	exit(-1);
 //}
 }
