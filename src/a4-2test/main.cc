@@ -32,11 +32,19 @@ int yyparse(void);   // defined in y.tab.c
 void segregateJoinsAndMultiTableSelects(vector<AndList*> &multiTableSelects);
 TableInfo* getTableInfo(QueryPlanNode* node);
 void popNextTwoJoinNodes(vector<QueryPlanNode*> copyList, AndList* clause,
-		QueryPlanNode* node1, QueryPlanNode* node2);
+		QueryPlanNode* &node1, QueryPlanNode* &node2);
 void findAndApplyBestJoinPlan(vector<QueryPlanNode*> nodes,
 		AndList* joinConditions, Statistics &stats);
 
 int main() {
+
+	char *test =
+			"SELECT SUM (ps.ps_supplycost) \
+	FROM part AS p, supplier AS s, partsupp AS ps \
+	WHERE (p.p_partkey = ps.ps_partkey) AND \
+		  (s.s_suppkey = ps.ps_suppkey) AND \
+		  (s.s_acctbal > 2500)";
+	yy_scan_string(test);
 
 	yyparse();
 
@@ -96,6 +104,7 @@ void findAndApplyBestJoinPlan(vector<QueryPlanNode*> nodes,
 	while (permutation != NULL) {
 		Statistics st(stats);
 		vector<QueryPlanNode*> copyList(nodes);
+
 		double temp_est = 0;
 		AndList* andList = permutation;
 		while (andList != NULL) {
@@ -150,7 +159,7 @@ void findAndApplyBestJoinPlan(vector<QueryPlanNode*> nodes,
 		QueryPlanNode* node1;
 		QueryPlanNode* node2;
 		popNextTwoJoinNodes(nodes, bestPermutation, node1, node2);
-		JoinNode* new_join_node = new JoinNode(node1, node2, false, stats,
+		JoinNode* new_join_node = new JoinNode(node1, node2, true, stats,
 				bestPermutation);
 		nodes.push_back(new_join_node);
 
@@ -164,7 +173,7 @@ void findAndApplyBestJoinPlan(vector<QueryPlanNode*> nodes,
 		nodes.pop_back();
 		node2 = nodes.back();
 		nodes.pop_back();
-		JoinNode* new_join_node = new JoinNode(node1, node2, false, stats,
+		JoinNode* new_join_node = new JoinNode(node1, node2, true, stats,
 		NULL);
 
 		nodes.push_back(new_join_node);
@@ -175,7 +184,7 @@ void findAndApplyBestJoinPlan(vector<QueryPlanNode*> nodes,
 
 //returns the two nodes from the vector involving the given AND condition.
 void popNextTwoJoinNodes(vector<QueryPlanNode*> copyList, AndList* clause,
-		QueryPlanNode* node1, QueryPlanNode* node2) {
+		QueryPlanNode* &node1, QueryPlanNode* &node2) {
 	ComparisonOp* op = clause->left->left;
 	Operand* left = op->left;
 	Operand* right = op->right;
@@ -187,8 +196,8 @@ void popNextTwoJoinNodes(vector<QueryPlanNode*> copyList, AndList* clause,
 		QueryPlanNode* node = copyList.at(i);
 		TableInfo* tbl_info = getTableInfo(node);
 		if (!node1Found) {
-
-			auto it = tbl_info->attributes.find(string(left->value));
+			string str = string(left->value);
+			auto it = tbl_info->attributes.find(str);
 
 			if (!(it == tbl_info->attributes.end())) {
 				node1Found = true;
@@ -208,6 +217,10 @@ void popNextTwoJoinNodes(vector<QueryPlanNode*> copyList, AndList* clause,
 				i--;
 				continue;
 			}
+		}
+
+		if (node2Found && node1Found) {
+			break;
 		}
 
 	}
