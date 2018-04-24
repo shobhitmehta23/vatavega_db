@@ -33,6 +33,23 @@ void QueryPlanNode::printQueryTreeHelper(QueryPlanNode *queryPlanNode) {
 	printQueryTreeHelper(queryPlanNode->right);
 }
 
+SelectFileNode::SelectFileNode(TableList* tbl, AndList* andList,
+		Statistics &stats) :
+		QueryPlanNode(Select_Pipe_Node) {
+	this->table = tbl;
+	char* tableName =
+			table->aliasAs == NULL ? table->tableName : table->aliasAs;
+	if (table->aliasAs != NULL) {
+		stats.CopyRel(table->tableName, table->aliasAs);
+	}
+	this->tableInfo =
+			stats.group_to_table_info_map[stats.relation_to_group_map[string(
+					tableName)]];
+	applySelectCondition(andList, stats);
+	outputPipe = new Pipe(100, ++pipeIdCounter);
+	estimate = 0;
+}
+
 void SelectFileNode::printNode() {
 	printNodeBoundary();
 	cout << "SELECT FILE OPERATION ON  " << string(table->tableName) << endl;
@@ -176,7 +193,9 @@ JoinNode::JoinNode(QueryPlanNode* node1, QueryPlanNode* node2, bool doApply,
 
 	stats.Apply(query, arr, relations.size());
 	//TODO Test it
-	tableInfo = stats.group_to_table_info_map[stats.relation_to_group_map[relNames.at(0)]];
+	tableInfo =
+			stats.group_to_table_info_map[stats.relation_to_group_map[relNames.at(
+					0)]];
 	if (doApply) {
 		outputPipe = new Pipe(100, ++pipeIdCounter);
 
@@ -201,6 +220,30 @@ JoinNode::JoinNode(QueryPlanNode* node1, QueryPlanNode* node2, bool doApply,
 		left = node1;
 		right = node2;
 	}
+
+}
+
+SelectPipeNode::SelectPipeNode(vector<AndList*> multiTableSelects,
+		JoinNode* node, Statistics &stats) :
+		QueryPlanNode(Select_Pipe_Node) {
+
+	AndList* query = new AndList();
+	AndList* handle = query;
+	for (AndList* list : multiTableSelects) {
+		handle->left = list->left;
+		handle->rightAnd = new AndList();
+		handle = handle->rightAnd;
+	}
+	handle->rightAnd = NULL;
+	inputPipe = node->outputPipe;
+	outSchema = node->outSchema;
+	left = node;
+	outputPipe = new Pipe(100, ++pipeIdCounter);
+	char** arr = node->relNames.data();
+	stats.Apply(query, arr, node->relNames.size());
+
+	Record literal;
+	cnf.GrowFromParseTree(query, outSchema, literal);
 
 }
 

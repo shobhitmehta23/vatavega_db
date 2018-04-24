@@ -67,6 +67,10 @@ int main() {
 		//permute and find best join plan
 		findAndApplyBestJoinPlan(nodes, boolean, stats);
 		//process select with OR and two tables (suppose to be on a joined table), this should be done along with joins.
+		SelectPipeNode *node = new SelectPipeNode(multiTableSelects,
+				nodes.at(0), stats);
+		nodes.pop_back();
+		nodes.push_back(node);
 
 	}
 
@@ -77,6 +81,8 @@ int main() {
 	//process distinct
 
 	//process write out
+
+	constructTree(nodes.at(0));
 }
 
 void findAndApplyBestJoinPlan(vector<QueryPlanNode*> nodes,
