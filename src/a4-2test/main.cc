@@ -12,6 +12,13 @@ extern struct NameList *attsToSelect; // the set of attributes in the SELECT (NU
 extern int distinctAtts; // 1 if there is a DISTINCT in a non-aggregate query
 extern int distinctFunc;  // 1 if there is a DISTINCT in an aggregate query
 
+QueryPlanNode * constructTree(QueryPlanNode * rootUptillNow);
+GroupByNode * constructGroupByNode(Schema * oldSchema, Pipe * oldPipe);
+SumNode * constructSumNode(Schema * oldSchema, Pipe * oldPipe);
+ProjectNode * constructProjectNode(Schema *oldSchema, Pipe * oldPipe);
+distinctNode * constructDistinctNode(Schema * oldSchema, Pipe * oldPipe);
+writeOutNode * constructWriteOutNode(Schema *oldSchema, Pipe * oldPipe);
+
 extern "C" struct YY_BUFFER_STATE *yy_scan_string(const char*);
 
 using namespace std;
@@ -49,8 +56,6 @@ int main() {
 
 		//segregate joins and selects on joins.
 		segregateJoinsAndMultiTableSelects(multiTableSelects);
-
-
 
 	}
 
@@ -102,3 +107,151 @@ void segregateJoinsAndMultiTableSelects(vector<AndList*> &multiTableSelects) {
 	}
 }
 
+writeOutNode * constructWriteOutNode(Schema *oldSchema, Pipe * oldPipe) {
+	writeOutNode * write_out_node = new writeOutNode;
+	write_out_node->inputPipe = oldPipe;
+	write_out_node->outSchema = oldSchema;
+	write_out_node->filePointer = stdout;
+	return write_out_node;
+}
+
+ProjectNode * constructProjectNode(Schema *oldSchema, Pipe * oldPipe) {
+	ProjectNode * projectNode = new ProjectNode;
+	projectNode->inputPipe = oldPipe;
+	projectNode->outputPipe = new Pipe(100, ++QueryPlanNode::pipeIdCounter);
+
+	Attribute *atts = oldSchema->GetAtts();
+	int numOfAtts = oldSchema->GetNumAtts();
+	vector<int> keepAttributes = *(new vector<int>()); // will keep selected attributes
+	vector<Attribute> selectedAttributes;
+	for (int i = 0; i < numOfAtts; i++) {
+		char * attName = atts[i].name;
+		NameList * tempNameList = attsToSelect;
+
+		while (tempNameList != NULL) {
+			if (!strcmp(tempNameList->name, attName)) {
+				keepAttributes.push_back(i);
+				selectedAttributes.push_back(atts[i]);
+				break;
+			}
+			tempNameList = tempNameList->next;
+		}
+	}
+
+	projectNode->inputPipe = oldPipe;
+	projectNode->outputPipe = new Pipe(100, ++QueryPlanNode::pipeIdCounter);
+	projectNode->numOfAttsOutput = keepAttributes.size();
+	projectNode->numOfAttsInput = numOfAtts;
+	projectNode->keepme = keepAttributes.data();
+
+	projectNode->outSchema = new Schema("dummy", selectedAttributes.size(),
+			selectedAttributes.data());
+
+	return projectNode;
+}
+
+distinctNode * constructDistinctNode(Schema * oldSchema, Pipe * oldPipe) {
+	distinctNode * distinct_node = new distinctNode;
+	distinct_node->inputPipe = oldPipe;
+	distinct_node->outputPipe = new Pipe(100, ++QueryPlanNode::pipeIdCounter);
+	distinct_node->outSchema = oldSchema;
+	return distinct_node;
+}
+
+SumNode * constructSumNode(Schema * oldSchema, Pipe * oldPipe) {
+
+	if (finalFunction == NULL) {
+		return NULL;
+	}
+
+	SumNode * sumNode = new SumNode;
+	sumNode->inputPipe = oldPipe;
+	sumNode->outputPipe = new Pipe(100, ++QueryPlanNode::pipeIdCounter);
+	sumNode->function = new Function;
+	(sumNode->function)->GrowFromParseTree(finalFunction, *oldSchema);
+	Attribute * att = new Attribute[1];
+	att->name = "SUM";
+
+	if (sumNode->function->returnsInt) {
+		att->myType = Int;
+	} else {
+		att->myType = Double;
+	}
+
+	sumNode->outSchema = new Schema("dummy", 1, att);
+	return sumNode;
+}
+
+GroupByNode * constructGroupByNode(Schema * oldSchema, Pipe * oldPipe) {
+	if (groupingAtts == NULL) {
+		return NULL;
+	}
+
+	GroupByNode * groupByNode = new GroupByNode;
+	groupByNode->function = new Function;
+	(groupByNode->function)->GrowFromParseTree(finalFunction, *oldSchema);
+	groupByNode->inputPipe = oldPipe;
+	groupByNode->outputPipe = new Pipe(100, ++QueryPlanNode::pipeIdCounter);
+	vector<Attribute> selectedAttributes = *(new vector<Attribute>());
+	OrderMaker * orderMaker = new OrderMaker;
+
+	Attribute groupBySum;
+	groupBySum.name = "SUM";
+
+	if (groupByNode->function->returnsInt) {
+		groupBySum.myType = Int;
+	} else {
+		groupBySum.myType = Double;
+	}
+
+	selectedAttributes.push_back(groupBySum);
+
+	Attribute * oldAtts = oldSchema->GetAtts();
+	int oldAttsLen = oldSchema->GetNumAtts();
+
+	NameList * tempNameList = groupingAtts;
+
+	while (tempNameList != NULL) {
+		int i = 0;
+		for (; i < oldAttsLen; i++) {
+			if (!strcmp(tempNameList->name, oldAtts[i].name)) {
+				selectedAttributes.push_back(oldAtts[i]);
+				break;
+			}
+		}
+		orderMaker->whichAtts[orderMaker->numAtts] = i;
+		orderMaker->whichTypes[(orderMaker->numAtts)++] = oldAtts[i].myType;
+		tempNameList = tempNameList->next;
+	}
+
+	groupByNode->orderMaker = orderMaker;
+	groupByNode->outSchema = new Schema("dummy", selectedAttributes.size(), selectedAttributes.data());
+
+	return groupByNode;
+}
+
+QueryPlanNode * constructTree(QueryPlanNode * rootUptillNow) {
+	QueryPlanNode * root = rootUptillNow;
+
+	GroupByNode * groupByNode = constructGroupByNode(root->outSchema, root->outputPipe);
+	if (groupByNode != NULL) {
+		root = groupByNode;
+		root = constructProjectNode(root->outSchema, root->outputPipe);
+	} else {
+		SumNode * sumNode = constructSumNode(root->outSchema, root->outputPipe);
+		if (sumNode != NULL) {
+			root = sumNode;
+		} else {
+			root = constructProjectNode(root->outSchema, root->outputPipe);
+		}
+	}
+
+	// at this point root node either points to project node or sum node.
+	if (distinctAtts || distinctFunc) {
+		root = constructDistinctNode(root->outSchema, root->outputPipe);
+	}
+
+	root = constructWriteOutNode(root->outSchema, root->outputPipe);
+
+	return root;
+}
