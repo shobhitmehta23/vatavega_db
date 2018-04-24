@@ -68,7 +68,7 @@ int main() {
 		findAndApplyBestJoinPlan(nodes, boolean, stats);
 		//process select with OR and two tables (suppose to be on a joined table), this should be done along with joins.
 		SelectPipeNode *node = new SelectPipeNode(multiTableSelects,
-				nodes.at(0), stats);
+				(JoinNode*) nodes.at(0), stats);
 		nodes.pop_back();
 		nodes.push_back(node);
 
@@ -273,7 +273,7 @@ writeOutNode * constructWriteOutNode(QueryPlanNode * child) {
 
 ProjectNode * constructProjectNode(QueryPlanNode * child) {
 	Schema *oldSchema = child->outSchema;
-		Pipe * oldPipe = child->outputPipe;
+	Pipe * oldPipe = child->outputPipe;
 	ProjectNode * projectNode = new ProjectNode;
 	projectNode->inputPipe = oldPipe;
 	projectNode->outputPipe = new Pipe(100, ++QueryPlanNode::pipeIdCounter);
@@ -311,7 +311,7 @@ ProjectNode * constructProjectNode(QueryPlanNode * child) {
 
 distinctNode * constructDistinctNode(QueryPlanNode * child) {
 	Schema *oldSchema = child->outSchema;
-		Pipe * oldPipe = child->outputPipe;
+	Pipe * oldPipe = child->outputPipe;
 	distinctNode * distinct_node = new distinctNode;
 	distinct_node->inputPipe = oldPipe;
 	distinct_node->outputPipe = new Pipe(100, ++QueryPlanNode::pipeIdCounter);
@@ -321,7 +321,7 @@ distinctNode * constructDistinctNode(QueryPlanNode * child) {
 
 SumNode * constructSumNode(QueryPlanNode * child) {
 	Schema *oldSchema = child->outSchema;
-		Pipe * oldPipe = child->outputPipe;
+	Pipe * oldPipe = child->outputPipe;
 
 	if (finalFunction == NULL) {
 		return NULL;
@@ -348,7 +348,7 @@ SumNode * constructSumNode(QueryPlanNode * child) {
 
 GroupByNode * constructGroupByNode(QueryPlanNode * child) {
 	Schema *oldSchema = child->outSchema;
-		Pipe * oldPipe = child->outputPipe;
+	Pipe * oldPipe = child->outputPipe;
 	if (groupingAtts == NULL) {
 		return NULL;
 	}
@@ -400,7 +400,6 @@ GroupByNode * constructGroupByNode(QueryPlanNode * child) {
 
 QueryPlanNode * constructTree(QueryPlanNode * rootUptillNow) {
 	QueryPlanNode * root = rootUptillNow;
-
 
 	GroupByNode * groupByNode = constructGroupByNode(root);
 	if (groupByNode != NULL) {
