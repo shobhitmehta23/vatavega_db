@@ -88,7 +88,6 @@ public:
 class GroupByNode: public QueryPlanNode {
 public:
 	Pipe *inputPipe;
-	Pipe *outputPipe;
 	OrderMaker * orderMaker;
 	Function * function;
 	GroupByNode() :
@@ -103,7 +102,6 @@ public:
 class SumNode: public QueryPlanNode {
 public:
 	Pipe *inputPipe;
-	Pipe *outputPipe;
 	Function * function;
 	SumNode() :
 			QueryPlanNode(Sum_Node) {
@@ -116,7 +114,6 @@ public:
 class ProjectNode: public QueryPlanNode {
 public:
 	Pipe *inputPipe;
-	Pipe *outputPipe;
 	int *keepme;
 	int numOfAttsOutput;
 	int numOfAttsInput;
@@ -131,7 +128,6 @@ public:
 class distinctNode: public QueryPlanNode {
 public:
 	Pipe *inputPipe;
-	Pipe *outputPipe;
 	distinctNode() :
 			QueryPlanNode(distinct_Node) {
 	}
