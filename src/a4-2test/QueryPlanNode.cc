@@ -166,8 +166,7 @@ JoinNode::JoinNode(QueryPlanNode* node1, QueryPlanNode* node2, bool doApply,
 			relations.push_back(tbl);
 		}
 	}
-	char** arr;
-	std::copy(relations.begin(), relations.end(), arr);
+	char** arr = relations.data();
 
 	estimate = stats.Estimate(query, arr, relations.size());
 

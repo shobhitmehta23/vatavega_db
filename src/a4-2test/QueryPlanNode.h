@@ -77,7 +77,7 @@ public:
 	Pipe *inputPipe;
 
 	SelectPipeNode();
-	~SelectPipeNode();
+	~SelectPipeNode(){};
 	void printNode();
 };
 
@@ -97,42 +97,49 @@ public:
 };
 
 class GroupByNode: public QueryPlanNode {
+public:
 	Pipe *inputPipe;
 	Pipe *outputPipe;
 	OrderMaker * orderMaker;
 	Function * function;
-	GroupByNode();
-	~GroupByNode();
+	GroupByNode():QueryPlanNode(GroupBy_Node){};
+	~GroupByNode(){};
 	void printNode();
 };
 class SumNode: public QueryPlanNode {
+public:
 	Pipe *inputPipe;
 	Pipe *outputPipe;
 	Function * function;
-	SumNode();
-	~SumNode();
+	SumNode():QueryPlanNode(Sum_Node){}
+	~SumNode(){};
 	void printNode();
 };
 class ProjectNode: public QueryPlanNode {
+public:
 	Pipe *inputPipe;
 	Pipe *outputPipe;
 	int *keepme;
 	int numOfAttsOutput;
-	ProjectNode();
-	~ProjectNode();
+	int numOfAttsInput;
+	ProjectNode():QueryPlanNode(Project_Node){}
+	~ProjectNode(){};
 	void printNode();
 };
 class distinctNode: public QueryPlanNode {
+public:
 	Pipe *inputPipe;
 	Pipe *outputPipe;
-	distinctNode();
-	~distinctNode();
+	distinctNode():QueryPlanNode(distinct_Node){};
+	~distinctNode(){};
 	void printNode();
 };
 class writeOutNode: public QueryPlanNode {
+public:
 	Pipe *inputPipe;
-	writeOutNode();
-	~writeOutNode();
+	FILE *filePointer;
+	writeOutNode():QueryPlanNode(writeOut_Node){};
+	~writeOutNode(){};
 	void printNode();
 };
 #endif /* QUERYPLANNODE_H_ */

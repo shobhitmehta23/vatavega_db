@@ -24,10 +24,9 @@ private:
 	Arithmatic *opList;
 	int numOps;
 
-	int returnsInt;
-
 public:
 
+	int returnsInt;
 	Function ();
 
 	// this grows the specified function from a parse tree and converts
