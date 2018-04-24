@@ -35,8 +35,10 @@ void QueryPlanNode::printQueryTreeHelper(QueryPlanNode *queryPlanNode) {
 
 SelectFileNode::SelectFileNode(TableList* tbl, AndList* andList,
 		Statistics &stats) :
-		QueryPlanNode(Select_Pipe_Node) {
-	this->table = tbl;
+		QueryPlanNode(Select_File_Node) {
+	this->table = new TableList();
+	this->table->aliasAs = tbl->aliasAs;
+	this->table->tableName = tbl->tableName;
 	char* tableName =
 			table->aliasAs == NULL ? table->tableName : table->aliasAs;
 	if (table->aliasAs != NULL) {
