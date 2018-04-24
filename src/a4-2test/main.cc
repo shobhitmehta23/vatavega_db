@@ -348,6 +348,7 @@ distinctNode * constructDistinctNode(QueryPlanNode * child) {
 	distinct_node->inputPipe = oldPipe;
 	distinct_node->outputPipe = new Pipe(100, ++QueryPlanNode::pipeIdCounter);
 	distinct_node->outSchema = oldSchema;
+	distinct_node->left = child;
 	return distinct_node;
 }
 
