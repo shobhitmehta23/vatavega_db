@@ -363,11 +363,20 @@ void printPipe(Pipe *pipe, bool ifInputPipe) {
 
 void printNodeBoundary() {
 	static int count = 0;
+	static int nodeNo = 1;
 
 	if (++count % 2) {
-		cout << "***************************" << endl;
+		cout << "Node number " << nodeNo++ << endl;
+	}
+
+	for (int i = 0; i < 7; i++) {
+		cout << "*************************";
+	}
+	cout << "******";
+	if (count % 2) {
+		cout << endl;
 	} else {
-		cout << "***************************" << endl << endl;
+		cout << endl << endl;
 	}
 
 }
