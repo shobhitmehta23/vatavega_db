@@ -169,7 +169,7 @@ void JoinNode::printNode() {
 	printPipe(outputPipe, false);
 	printSchema(*outSchema);
 	cout << endl;
-	cout << "Select CNF" << endl;
+	cout << "Join CNF" << endl;
 	cnf.Print();
 	printNodeBoundary();
 }
