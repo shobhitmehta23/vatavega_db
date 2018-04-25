@@ -333,7 +333,7 @@ void printSchema(Schema& schema) {
 
 	Attribute *att = schema.GetAtts();
 	for (int i = 0; i < numberOfAtt; i++) {
-		string temp = "Att" + to_string((i + 1)) + ":";
+		string temp = "Att" + to_string(i) + ":";
 		cout << temp;
 
 		switch (att[i].myType) {
