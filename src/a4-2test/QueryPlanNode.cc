@@ -298,6 +298,7 @@ void ProjectNode::printNode() {
 	printPipe(inputPipe, true);
 	printPipe(outputPipe, false);
 	printSchema(*outSchema);
+	cout << endl;
 	cout << "attributes to keep" << endl;
 	for (int i = 0; i < numOfAttsOutput; i++) {
 		cout << keepme[i] << '\t';
@@ -360,7 +361,14 @@ void printPipe(Pipe *pipe, bool ifInputPipe) {
 }
 
 void printNodeBoundary() {
-	cout << "***************************" << endl;
+	static int count = 0;
+
+	if (++count % 2) {
+		cout << "***************************" << endl;
+	} else {
+		cout << "***************************" << endl << endl;
+	}
+
 }
 
 char* getRelationName(TableList* table) {

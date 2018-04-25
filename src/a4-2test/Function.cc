@@ -201,7 +201,17 @@ void Function :: GrowFromParseTree (struct FuncOperator *parseTree, Schema &mySc
 }
 
 void Function :: Print () {
+	// we will use this as a map. since enum has values from 0 to n, it will be
+	// 1<-> correspondence
+	char* operation_names[14] = {
+	    "PushInt", "PushDouble", "ToDouble", "ToDouble2Down",
+	    "IntUnaryMinus", "IntMinus", "IntPlus", "IntDivide", "IntMultiply",
+	    "DblUnaryMinus", "DblMinus", "DblPlus", "DblDivide", "DblMultiply"
+	  };
 
+	  for (int i=0; i < numOps; i++) {
+		  std::cout << opList[i].recInput << " " << operation_names[opList[i].myOp] << std::endl;
+	  }
 }
 
 Type Function :: Apply (Record &toMe, int &intResult, double &doubleResult) {

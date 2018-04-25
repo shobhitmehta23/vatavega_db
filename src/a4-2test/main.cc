@@ -107,7 +107,7 @@ int main() {
 		FROM lineitem AS l \
 		WHERE (l.l_discount<0.07) AND (l.l_quantity < 24)";
 
-	yy_scan_string(test5);
+	yy_scan_string(test1);
 
 	yyparse();
 
