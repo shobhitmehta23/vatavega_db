@@ -235,7 +235,8 @@ JoinNode::JoinNode(QueryPlanNode* node1, QueryPlanNode* node2, bool doApply,
 				numberOfAtt2 + numberOfAtt1, attributes);
 
 		Record literal;
-		cnf.GrowFromParseTree(query, outSchema, literal);
+		cnf.GrowFromParseTree(query, node1->outSchema, node2->outSchema,
+				literal);
 		left = node1;
 		right = node2;
 	}
