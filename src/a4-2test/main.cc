@@ -90,7 +90,7 @@ char *test8 =
 			  (o.o_custkey = c.c_custkey) AND \
 			  (c.c_nationkey = n.n_nationkey) AND \
 			  (n.n_regionkey = r.r_regionkey) AND \
-			  (r.r_regionkey = 1) AND (o.orderkey < 10000)";
+			  (r.r_regionkey = 1) AND (o.o_orderkey < 10000)";
 
 
 
