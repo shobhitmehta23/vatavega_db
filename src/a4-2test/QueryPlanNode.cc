@@ -131,7 +131,7 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 
 	char * ch[] = { (char*) tableName.c_str() };
 	//calculate and apply the estimates
-	stats.Apply(currentAndListPtr, ch, 1);
+	stats.Apply(selectAndList, ch, 1);
 
 	// suck up the schema from the file
 	Schema* sch = new Schema("catalog", table->tableName); //FIXME hardcoded schema name
@@ -145,7 +145,7 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 	}
 
 	Record literal;
-	cnf.GrowFromParseTree(currentAndListPtr, sch, literal);
+	cnf.GrowFromParseTree(selectAndList, sch, literal);
 	outSchema = sch;
 }
 
