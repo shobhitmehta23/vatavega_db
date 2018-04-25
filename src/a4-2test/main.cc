@@ -404,8 +404,6 @@ ProjectNode * constructProjectNode(QueryPlanNode * child) {
 		}
 	}
 
-	projectNode->inputPipe = oldPipe;
-	projectNode->outputPipe = new Pipe(100, ++QueryPlanNode::pipeIdCounter);
 	projectNode->numOfAttsOutput = keepAttributes.size();
 	projectNode->numOfAttsInput = numOfAtts;
 	projectNode->keepme = keepAttributes.data();
