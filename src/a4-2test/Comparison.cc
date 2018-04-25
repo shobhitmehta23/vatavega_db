@@ -602,9 +602,9 @@ void CNF::GrowFromParseTree(struct AndList *parseTree, Schema *mySchema,
 				 exit (1);*/
 
 				if (typeLeft == Double && typeRight == Int) {
-					cout
+					/*cout
 							<< "warning, according to professor's code this would have been an error due to type mismatch between left and right operands in the function GrowFromParseTree, but we thought int and double are compatible so modified this code. If you feel something is wrong have a look at the corresponding function"
-							<< endl;
+							<< endl;*/
 				} else {
 					cerr << "ERROR! Type mismatch in CNF.  "
 							<< myOr->left->left->value << " and "

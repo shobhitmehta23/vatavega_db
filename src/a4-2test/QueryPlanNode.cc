@@ -57,6 +57,7 @@ void SelectFileNode::printNode() {
 	cout << "SELECT FILE OPERATION ON  " << string(table->tableName) << endl;
 	printPipe(outputPipe, false);
 	printSchema(*outSchema);
+	cout << endl;
 	cout << "Select CNF" << endl;
 	cnf.Print();
 	printNodeBoundary();
@@ -154,6 +155,7 @@ void SelectPipeNode::printNode() {
 	printPipe(inputPipe, true);
 	printPipe(outputPipe, false);
 	printSchema(*outSchema);
+	cout << endl;
 	cout << "Select CNF" << endl;
 	cnf.Print();
 	printNodeBoundary();
@@ -166,6 +168,7 @@ void JoinNode::printNode() {
 	printPipe(inputPipe2, true);
 	printPipe(outputPipe, false);
 	printSchema(*outSchema);
+	cout << endl;
 	cout << "Select CNF" << endl;
 	cnf.Print();
 	printNodeBoundary();
@@ -269,6 +272,7 @@ void GroupByNode::printNode() {
 	printPipe(inputPipe, true);
 	printPipe(outputPipe, false);
 	printSchema(*outSchema);
+	cout << endl;
 	cout << "order maker: " << endl;
 	orderMaker->Print();
 	cout << "function: " << endl;
@@ -282,6 +286,7 @@ void SumNode::printNode() {
 	printPipe(inputPipe, true);
 	printPipe(outputPipe, false);
 	printSchema(*outSchema);
+	cout << endl;
 	cout << "function: " << endl;
 	function->Print();
 	printNodeBoundary();
@@ -307,6 +312,7 @@ void distinctNode::printNode() {
 	printPipe(inputPipe, true);
 	printPipe(outputPipe, false);
 	printSchema(*outSchema);
+	cout << endl;
 	printNodeBoundary();
 }
 
@@ -315,6 +321,7 @@ void writeOutNode::printNode() {
 	cout << "WRITE OUT OPERATION " << endl;
 	printPipe(inputPipe, true);
 	printSchema(*outSchema);
+	cout << endl;
 	printNodeBoundary();
 }
 
@@ -324,19 +331,22 @@ void printSchema(Schema& schema) {
 
 	Attribute *att = schema.GetAtts();
 	for (int i = 0; i < numberOfAtt; i++) {
-		string temp = "Att" + to_string((i + 1)) + ":\t";
+		string temp = "Att" + to_string((i + 1)) + ":";
+		cout << temp;
 
 		switch (att[i].myType) {
 		case Double:
-			cout << "double ";
+			cout << "(double)";
 			break;
 		case Int:
-			cout << "int ";
+			cout << "(int)";
 			break;
 		case String:
-			cout << "string ";
+			cout << "(string)";
 			break;
 		}
+
+		cout << string(att[i].name) << "\t";
 	}
 }
 
