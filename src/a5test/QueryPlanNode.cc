@@ -1,4 +1,5 @@
 #include "QueryPlanNode.h"
+#include "RelOp.h"
 #include <cstring>
 
 void printSchema(Schema& schema);
@@ -19,7 +20,15 @@ QueryPlanNode::~QueryPlanNode() {
 void QueryPlanNode::printQueryTree() {
 	printQueryTreeHelper(this);
 }
+
+void QueryPlanNode::executeQueryTree() {
+	executeQueryTreeHelper(this);
+}
 void QueryPlanNode::printNode() {
+
+}
+
+void QueryPlanNode::executeNode() {
 
 }
 
@@ -31,6 +40,17 @@ void QueryPlanNode::printQueryTreeHelper(QueryPlanNode *queryPlanNode) {
 	printQueryTreeHelper(queryPlanNode->left);
 	queryPlanNode->printNode();
 	printQueryTreeHelper(queryPlanNode->right);
+}
+
+//Similar to printQueryTreeHelper(), this executes query instead. calls execute on each node in post order fashion.
+void QueryPlanNode::executeQueryTreeHelper(QueryPlanNode *queryPlanNode) {
+	if (queryPlanNode == NULL) {
+		return;
+	}
+
+	executeQueryTreeHelper(queryPlanNode->left);
+	executeQueryTreeHelper(queryPlanNode->right);
+	queryPlanNode->executeNode();
 }
 
 SelectFileNode::SelectFileNode(TableList* tbl, AndList* andList,
@@ -61,6 +81,16 @@ void SelectFileNode::printNode() {
 	cout << "Select CNF" << endl;
 	cnf.Print();
 	printNodeBoundary();
+}
+
+void SelectFileNode::executeNode() {
+	/*Execute the relational operation.*/
+	SelectFile selectFileOp;
+	DBFile tableFile;
+	tableFile.Open(string(strcat(table->tableName, ".bin")).c_str());
+	selectFileOp.Run(tableFile, *outputPipe, cnf, literal);
+	//selectFileOp.WaitUntilDone();
+	/*Rel Op execution done.*/
 }
 
 void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
@@ -144,21 +174,9 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 		attributes[i].name = tempName;
 	}
 
-	Record literal;
 	cnf.GrowFromParseTree(selectAndList, sch, literal);
-	outSchema = sch;
-}
 
-void SelectPipeNode::printNode() {
-	printNodeBoundary();
-	cout << "SELECT PIPE OPERATION " << endl;
-	printPipe(inputPipe, true);
-	printPipe(outputPipe, false);
-	printSchema(*outSchema);
-	cout << endl;
-	cout << "Select CNF" << endl;
-	cnf.Print();
-	printNodeBoundary();
+	outSchema = sch;
 }
 
 void JoinNode::printNode() {
@@ -172,6 +190,14 @@ void JoinNode::printNode() {
 	cout << "Join CNF" << endl;
 	cnf.Print();
 	printNodeBoundary();
+}
+
+void JoinNode::executeNode() {
+	/*Execute the relational operation.*/
+	Join joinOp;
+	joinOp.Run(*inputPipe1, *inputPipe2, *outputPipe, cnf, literal);
+	//joinOp.WaitUntilDone();
+	/*Rel Op execution done.*/
 }
 
 JoinNode::JoinNode(QueryPlanNode* node1, QueryPlanNode* node2, bool doApply,
@@ -234,7 +260,6 @@ JoinNode::JoinNode(QueryPlanNode* node1, QueryPlanNode* node2, bool doApply,
 				(char*) std::to_string(outputPipe->getPipeId()).c_str(),
 				numberOfAtt2 + numberOfAtt1, attributes);
 
-		Record literal;
 		cnf.GrowFromParseTree(query, node1->outSchema, node2->outSchema,
 				literal);
 		left = node1;
@@ -262,9 +287,27 @@ SelectPipeNode::SelectPipeNode(vector<AndList*> multiTableSelects,
 	char** arr = node->relNames.data();
 	stats.Apply(query, arr, node->relNames.size());
 
-	Record literal;
 	cnf.GrowFromParseTree(query, outSchema, literal);
+}
 
+void SelectPipeNode::printNode() {
+	printNodeBoundary();
+	cout << "SELECT PIPE OPERATION " << endl;
+	printPipe(inputPipe, true);
+	printPipe(outputPipe, false);
+	printSchema(*outSchema);
+	cout << endl;
+	cout << "Select CNF" << endl;
+	cnf.Print();
+	printNodeBoundary();
+}
+
+void SelectPipeNode::executeNode() {
+	/*Execute the relational operation.*/
+	SelectPipe selectPipeOp;
+	selectPipeOp.Run(*inputPipe, *outputPipe, cnf, literal);
+	//joinOp.WaitUntilDone();
+	/*Rel Op execution done.*/
 }
 
 void GroupByNode::printNode() {
@@ -281,6 +324,14 @@ void GroupByNode::printNode() {
 	printNodeBoundary();
 }
 
+void GroupByNode::executeNode() {
+	/*Execute the relational operation.*/
+	GroupBy groupByOp;
+	groupByOp.Run(*inputPipe, *outputPipe, *orderMaker, *function);
+	//groupByOp.WaitUntilDone();
+	/*Rel Op execution done.*/
+}
+
 void SumNode::printNode() {
 	printNodeBoundary();
 	cout << "SUM OPERATION " << endl;
@@ -291,6 +342,14 @@ void SumNode::printNode() {
 	cout << "function: " << endl;
 	function->Print();
 	printNodeBoundary();
+}
+
+void SumNode::executeNode() {
+	/*Execute the relational operation.*/
+	Sum sumOp;
+	sumOp.Run(*inputPipe, *outputPipe, *function);
+	//sumOp.WaitUntilDone();
+	/*Rel Op execution done.*/
 }
 
 void ProjectNode::printNode() {
@@ -308,7 +367,16 @@ void ProjectNode::printNode() {
 	printNodeBoundary();
 }
 
-void distinctNode::printNode() {
+void ProjectNode::executeNode() {
+	/*Execute the relational operation.*/
+	Project projectOp;
+	projectOp.Run(*inputPipe, *outputPipe, keepme, numOfAttsInput,
+			numOfAttsOutput);
+	//projectOp.WaitUntilDone();
+	/*Rel Op execution done.*/
+}
+
+void DistinctNode::printNode() {
 	printNodeBoundary();
 	cout << "DUPLICATE REMOVAL OPERATION " << endl;
 	printPipe(inputPipe, true);
@@ -318,13 +386,28 @@ void distinctNode::printNode() {
 	printNodeBoundary();
 }
 
-void writeOutNode::printNode() {
+void DistinctNode::executeNode() {
+	/*Execute the relational operation.*/
+	DuplicateRemoval dupRemovalOp;
+	dupRemovalOp.Run(*inputPipe, *outputPipe, *outSchema); //projectOp.WaitUntilDone();
+	/*Rel Op execution done.*/
+}
+
+void WriteOutNode::printNode() {
 	printNodeBoundary();
 	cout << "WRITE OUT OPERATION " << endl;
 	printPipe(inputPipe, true);
 	printSchema(*outSchema);
 	cout << endl;
 	printNodeBoundary();
+}
+
+void WriteOutNode::executeNode() {
+	/*Execute the relational operation.*/
+	WriteOut writeOp;
+	writeOp.Run(*inputPipe, filePointer, *outSchema);
+	writeOp.WaitUntilDone();
+	/*Rel Op execution done.*/
 }
 
 void printSchema(Schema& schema) {

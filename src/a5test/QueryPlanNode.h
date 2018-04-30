@@ -22,11 +22,14 @@ enum QueryNodeType {
 class QueryPlanNode {
 private:
 	void printQueryTreeHelper(QueryPlanNode *queryPlanNode);
+	void executeQueryTreeHelper(QueryPlanNode *queryPlanNode);
 public:
 	QueryPlanNode(QueryNodeType nodeType);
 	virtual ~QueryPlanNode();
 	virtual void printNode();
+	virtual void executeNode();
 	void printQueryTree();
+	void executeQueryTree();
 
 	Schema* outSchema = NULL;
 	QueryPlanNode * left = NULL;
@@ -35,6 +38,7 @@ public:
 	static int pipeIdCounter;
 	Pipe *outputPipe;
 	CNF cnf;
+	Record literal;
 
 };
 
@@ -53,6 +57,7 @@ public:
 	}
 	;
 	void printNode();
+	void executeNode();
 
 };
 
@@ -69,6 +74,7 @@ public:
 	~JoinNode() {
 	}
 	void printNode();
+	void executeNode();
 };
 
 class SelectPipeNode: public QueryPlanNode {
@@ -81,6 +87,7 @@ public:
 	}
 	;
 	void printNode();
+	void executeNode();
 };
 
 class GroupByNode: public QueryPlanNode {
@@ -96,6 +103,7 @@ public:
 	}
 	;
 	void printNode();
+	void executeNode();
 };
 class SumNode: public QueryPlanNode {
 public:
@@ -108,6 +116,7 @@ public:
 	}
 	;
 	void printNode();
+	void executeNode();
 };
 class ProjectNode: public QueryPlanNode {
 public:
@@ -122,30 +131,33 @@ public:
 	}
 	;
 	void printNode();
+	void executeNode();
 };
-class distinctNode: public QueryPlanNode {
+class DistinctNode: public QueryPlanNode {
 public:
 	Pipe *inputPipe;
-	distinctNode() :
+	DistinctNode() :
 			QueryPlanNode(distinct_Node) {
 	}
 	;
-	~distinctNode() {
+	~DistinctNode() {
 	}
 	;
 	void printNode();
+	void executeNode();
 };
-class writeOutNode: public QueryPlanNode {
+class WriteOutNode: public QueryPlanNode {
 public:
 	Pipe *inputPipe;
 	FILE *filePointer;
-	writeOutNode() :
+	WriteOutNode() :
 			QueryPlanNode(writeOut_Node) {
 	}
 	;
-	~writeOutNode() {
+	~WriteOutNode() {
 	}
 	;
 	void printNode();
+	void executeNode();
 };
 #endif /* QUERYPLANNODE_H_ */

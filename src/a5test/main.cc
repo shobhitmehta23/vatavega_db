@@ -19,8 +19,8 @@ QueryPlanNode * constructTree(QueryPlanNode * rootUptillNow);
 GroupByNode * constructGroupByNode(QueryPlanNode * child);
 SumNode * constructSumNode(QueryPlanNode * child);
 ProjectNode * constructProjectNode(QueryPlanNode * child);
-distinctNode * constructDistinctNode(QueryPlanNode * child);
-writeOutNode * constructWriteOutNode(QueryPlanNode * child);
+DistinctNode * constructDistinctNode(QueryPlanNode * child);
+WriteOutNode * constructWriteOutNode(QueryPlanNode * child);
 
 extern "C" struct YY_BUFFER_STATE *yy_scan_string(const char*);
 
@@ -361,10 +361,10 @@ void segregateJoinsAndMultiTableSelects(vector<AndList*> &multiTableSelects) {
 	}
 }
 
-writeOutNode * constructWriteOutNode(QueryPlanNode * child) {
+WriteOutNode * constructWriteOutNode(QueryPlanNode * child) {
 	Schema *oldSchema = child->outSchema;
 	Pipe * oldPipe = child->outputPipe;
-	writeOutNode * write_out_node = new writeOutNode;
+	WriteOutNode * write_out_node = new WriteOutNode;
 	write_out_node->inputPipe = oldPipe;
 	write_out_node->outSchema = oldSchema;
 	write_out_node->filePointer = stdout;
@@ -415,10 +415,10 @@ ProjectNode * constructProjectNode(QueryPlanNode * child) {
 	return projectNode;
 }
 
-distinctNode * constructDistinctNode(QueryPlanNode * child) {
+DistinctNode * constructDistinctNode(QueryPlanNode * child) {
 	Schema *oldSchema = child->outSchema;
 	Pipe * oldPipe = child->outputPipe;
-	distinctNode * distinct_node = new distinctNode;
+	DistinctNode * distinct_node = new DistinctNode;
 	distinct_node->inputPipe = oldPipe;
 	distinct_node->outputPipe = new Pipe(100, ++QueryPlanNode::pipeIdCounter);
 	distinct_node->outSchema = oldSchema;
