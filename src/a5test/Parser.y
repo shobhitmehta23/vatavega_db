@@ -6,6 +6,10 @@
 	#include <string.h>
 	#include <stdlib.h>
 	#include <iostream>
+	#include <vector>
+	#include <string>
+	
+	using namespace std;
 
 	extern "C" int yylex();
 	extern "C" int yyparse();
@@ -19,6 +23,27 @@
 	struct NameList *attsToSelect; // the set of attributes in the SELECT (NULL if no such atts)
 	int distinctAtts; // 1 if there is a DISTINCT in a non-aggregate query 
 	int distinctFunc;  // 1 if there is a DISTINCT in an aggregate query
+	
+	int dbFileType=0; //0 for heap, 1 for sorted file.
+	int isDDLQuery=0; //Set to 1 if  the query is of type CREATE, DROP, INSERT, etc. 
+	/*
+		isDDLQuery = 
+		1 - for CREATE
+		2 - for INSERT
+		3 - for DROP
+		4 - for SET OUTPUT 
+	*/
+	//int isCreateTableQuery = 0; //set to 1 for create table.
+	//int isInsertTableQuery = 0; //set to 1 for insert table.
+	//int isDropTableQuery = 0; //set to 1 for drop table.
+	//int isSetOutputQuery = 0; //set to 1 for set output mode.
+	string DDLQueryTableName;
+	
+	vector<CreateAttributes> createAttrList;
+	
+	string filePath;
+	int outputMode=0; //0 is default for STDOUT, 1 for output to file, 2 for NONE - i.e. print query plan
+	
 
 %}
 
@@ -32,14 +57,17 @@
 	struct OrList *myOrList;
 	struct AndList *myAndList;
 	struct NameList *myNames;
+	struct CreateAttributes *myAttributes;
 	char *actualChars;
 	char whichOne;
+	int attributeType;
 }
 
 %token <actualChars> Name
 %token <actualChars> Float
 %token <actualChars> Int
 %token <actualChars> String
+%token <actualChars> MyFile
 %token SELECT
 %token GROUP 
 %token DISTINCT
@@ -50,6 +78,21 @@
 %token AS
 %token AND
 %token OR
+%token CREATE
+%token TABLE
+%token <attributeType> TYPE_INTEGER
+%token <attributeType> TYPE_DOUBLE
+%token <attributeType> TYPE_STRING
+%token HEAP
+%token SORTED
+%token ON
+%token INSERT
+%token INTO
+%token DROP
+%token SET
+%token OUTPUT
+%token STDOUT
+%token NONE
 
 %type <myOrList> OrList
 %type <myAndList> AndList
@@ -61,6 +104,8 @@
 %type <myTables> Tables
 %type <myBoolOperand> Literal
 %type <myNames> Atts
+%type <myAttributes> Attributes
+%type <attributeType> AttributeType
 
 %start SQL
 
@@ -76,6 +121,7 @@
 
 SQL: SELECT WhatIWant FROM Tables WHERE AndList
 {
+	isDDLQuery = 0;
 	tables = $4;
 	boolean = $6;	
 	groupingAtts = NULL;
@@ -83,9 +129,97 @@ SQL: SELECT WhatIWant FROM Tables WHERE AndList
 
 | SELECT WhatIWant FROM Tables WHERE AndList GROUP BY Atts
 {
+	isDDLQuery = 0;
 	tables = $4;
 	boolean = $6;	
 	groupingAtts = $9;
+}
+
+| CREATE TABLE Name '(' Attributes ')' AS FileType
+{
+	isDDLQuery = 1;
+	//isCreateTableQuery = 1;
+  	DDLQueryTableName = $3;
+  	reverse(createAttrList.begin(), createAttrList.end()); // our grammar parses the attributes in the reverse order.
+}
+
+| INSERT MyFile INTO Name
+{
+  	isDDLQuery = 2;
+  	//isInsertTableQuery = 1;
+ 	filePath = $2;
+  	DDLQueryTableName = $4;
+}
+
+| DROP TABLE Name
+{
+	isDDLQuery = 3;
+  	//isDropTableQuery = 1;
+  	DDLQueryTableName = $3;
+}
+
+| SET OUTPUT OutPutOption
+{
+	isDDLQuery = 4;
+	//isSetOutputQuery = 1;
+  //outputMode = 0;
+};
+
+OutPutOption: STDOUT
+{
+  	outputMode = 0;
+  	filePath = "";
+}
+
+| MyFile
+{
+  	outputMode = 1;
+  	//string fn($1);
+  	filePath = $1;
+}
+
+| NONE
+{
+  	outputMode = 2;
+  	filePath = "";
+};
+
+Attributes: Name AttributeType ',' Attributes // non terminal, when more than one attributes present
+{
+  	CreateAttributes attr;
+  	attr.name = $1;
+  	attr.type = $2;
+  	createAttrList.push_back(attr);
+}
+| Name AttributeType // last attribute
+{
+  	CreateAttributes attr;
+  	attr.name = $1;
+  	attr.type = $2;
+  	createAttrList.push_back(attr);
+};
+
+AttributeType : TYPE_INTEGER
+{
+  $$ = 0;
+}
+| TYPE_DOUBLE
+{
+  $$ = 1;
+}
+| TYPE_STRING
+{
+  $$ = 2;
+};
+
+FileType : HEAP
+{
+  	dbFileType = 0;
+}
+
+| SORTED ON Atts
+{
+  	dbFileType = 1;
 };
 
 WhatIWant: Function ',' Atts 

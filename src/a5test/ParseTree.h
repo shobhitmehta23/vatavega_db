@@ -97,4 +97,9 @@ struct AndList {
 
 };
 
+struct CreateAttributes {
+		char* name;
+		int type;
+};
+
 #endif

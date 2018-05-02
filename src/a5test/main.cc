@@ -15,6 +15,18 @@ extern struct NameList *attsToSelect; // the set of attributes in the SELECT (NU
 extern int distinctAtts; // 1 if there is a DISTINCT in a non-aggregate query
 extern int distinctFunc;  // 1 if there is a DISTINCT in an aggregate query
 
+extern int dbFileType; //0 for heap, 1 for sorted file.
+extern int isDDLQuery; //Set to 1 if  the query is of type CREATE, DROP, INSERT, etc.
+//extern int isCreateTableQuery = 0; //set to 1 for create table.
+//extern int isInsertTableQuery = 0; //set to 1 for insert table.
+//extern int isDropTableQuery = 0; //set to 1 for drop table.
+//extern int isSetOutputQuery = 0; //set to 1 for set output mode.
+extern string DDLQueryTableName;
+extern struct CreateAttributes;
+extern vector<CreateAttributes> createAttrList;
+extern string filePath;
+extern int outputMode; //0 is default for STDOUT, 1 for output to file, 2 for NONE - i.e. print query plan
+
 QueryPlanNode * constructTree(QueryPlanNode * rootUptillNow);
 GroupByNode * constructGroupByNode(QueryPlanNode * child);
 SumNode * constructSumNode(QueryPlanNode * child);
@@ -113,7 +125,7 @@ int main(int args, char** argv) {
 	if (args == 1) {
 		yyparse();
 	} else {
-		yy_scan_string(tests[atoi(argv[1]) - 1]);
+		yy_scan_string (tests[atoi(argv[1]) - 1]);
 		yyparse();
 	}
 
@@ -121,50 +133,88 @@ int main(int args, char** argv) {
 	Statistics stats;
 	stats.Read("stats.txt");
 
-	vector<QueryPlanNode*> nodes;
+	//If DDL query, e.g. CREATE, INSERT, DROP or SET OUTPUT.
+	if (isDDLQuery > 0) {
+		switch (isDDLQuery) {
+		case 1:   // CREATE
+			cout << "Table name: " << DDLQueryTableName << endl;
+			cout << "DB file type: " << dbFileType << endl;
+			cout << "New Attributes: " << dbFileType << endl;
+			for (struct CreateAttributes c : createAttrList) {
+				cout << "---create attr::  " << c.name << "  :  " << c.type
+						<< endl;
+			}
 
-	//Create select nodes for all the tables, apply any comparison/condition/filter/where-clause, and add node to the list.
-	//this is a File select node.
-	while (tables != NULL) {
-		//the constructor of SelectFileNode will apply the corresponding comparisons in the AndList for the given table and update the statistic object.
-		SelectFileNode *node = new SelectFileNode(tables, boolean, stats);
-		nodes.push_back(node);
-		tables = tables->next;
-	}
+			if (dbFileType == 1) {
+				NameList * tempNameList = attsToSelect;
+				cout << " Sorted file on attributes: " << dbFileType << endl;
+				while (tempNameList != NULL) {
+					cout << "---attr::  " << tempNameList->name << endl;
+					tempNameList = tempNameList->next;
+				}
+			}
+			break;
+		case 2:   //INSERT INTO
+			cout << "Table name: " << DDLQueryTableName << endl;
+			cout << "File path: " << filePath << endl;
+			break;
+		case 3:   // DROP TABLE
+			cout << "Table name: " << DDLQueryTableName << endl;
+			break;
+		case 4:   // SET OUTPUT
+			cout << "outputMode: " << outputMode << endl;
+			break;
+		default:
+			break;
 
-	vector<AndList*> multiTableSelects;
-	//check if joins exist.
-	//Join nodes and join dependent selects are only possible if joins exist. Else just ignore them.
-	if (nodes.size() > 1) {
-		//Now start processing Joins
+		}
+	} else {
 
-		//segregate joins and selects on joins.
-		segregateJoinsAndMultiTableSelects(multiTableSelects);
-		//permute and find best join plan
-		findAndApplyBestJoinPlan(nodes, boolean, stats);
-		//process select with OR and two tables (suppose to be on a joined table), this should be done along with joins.
+		vector<QueryPlanNode*> nodes;
 
-		if (multiTableSelects.size() > 0) {
-			SelectPipeNode *node = new SelectPipeNode(multiTableSelects,
-					(JoinNode*) nodes.at(0), stats);
-			nodes.pop_back();
+		//Create select nodes for all the tables, apply any comparison/condition/filter/where-clause, and add node to the list.
+		//this is a File select node.
+		while (tables != NULL) {
+			//the constructor of SelectFileNode will apply the corresponding comparisons in the AndList for the given table and update the statistic object.
+			SelectFileNode *node = new SelectFileNode(tables, boolean, stats);
 			nodes.push_back(node);
+			tables = tables->next;
 		}
 
+		vector<AndList*> multiTableSelects;
+		//check if joins exist.
+		//Join nodes and join dependent selects are only possible if joins exist. Else just ignore them.
+		if (nodes.size() > 1) {
+			//Now start processing Joins
+
+			//segregate joins and selects on joins.
+			segregateJoinsAndMultiTableSelects(multiTableSelects);
+			//permute and find best join plan
+			findAndApplyBestJoinPlan(nodes, boolean, stats);
+			//process select with OR and two tables (suppose to be on a joined table), this should be done along with joins.
+
+			if (multiTableSelects.size() > 0) {
+				SelectPipeNode *node = new SelectPipeNode(multiTableSelects,
+						(JoinNode*) nodes.at(0), stats);
+				nodes.pop_back();
+				nodes.push_back(node);
+			}
+
+		}
+
+		//process groupby and sum
+
+		//process projection
+
+		//process distinct
+
+		//process write out
+		//cout<<"nodes.size(): "<< nodes.size()<<endl;
+		//nodes.at(0)->printQueryTree();
+
+		QueryPlanNode* root = constructTree(nodes.at(0));
+		root->printQueryTree();
 	}
-
-	//process groupby and sum
-
-	//process projection
-
-	//process distinct
-
-	//process write out
-	//cout<<"nodes.size(): "<< nodes.size()<<endl;
-	//nodes.at(0)->printQueryTree();
-
-	QueryPlanNode* root = constructTree(nodes.at(0));
-	root->printQueryTree();
 
 }
 

@@ -55,6 +55,34 @@ void yyerror(char*s);
 
 "AS"			return(AS);
 
+"CREATE"		return(CREATE);
+
+"TABLE"		return(TABLE);
+
+"INTEGER"	return(TYPE_INTEGER);
+
+"DOUBLE"		return(TYPE_DOUBLE);
+
+"STRING"		return(TYPE_STRING);
+
+"HEAP"		return(HEAP);
+
+"SORTED"		return(SORTED);
+
+"ON"			return(ON);
+
+"INSERT"		return(INSERT);
+
+"INTO"		return(INTO);
+
+"DROP"		return(DROP);
+
+"SET"		return(SET);
+
+"OUTPUT"		return(OUTPUT);
+
+"STDOUT"		return(STDOUT);
+
 "("			return('(');
 
 "<"                     return('<');
@@ -117,4 +145,6 @@ int yywrap(void){
   return 1;
 }
 
+//"UPDATE"		return(UPDATE);
 
+//"STATISTICS"		return(STATISTICS);
