@@ -83,6 +83,8 @@ void yyerror(char*s);
 
 "STDOUT"		return(STDOUT);
 
+"NONE"		return(NONE);
+
 "("			return('(');
 
 "<"                     return('<');
@@ -118,6 +120,14 @@ void yyerror(char*s);
 [A-Za-z][A-Za-z0-9_-]*\.[A-Za-z][A-Za-z0-9_-]* {yylval.actualChars = strdup(yytext);
   			return(Name);
 			}     
+
+\'[A-Za-z0-9_\/\.]+\' {yylval.actualChars = strdup(yytext + 1);
+                       if (yylval.actualChars[yyleng-2] != '\'')
+                           yyerror("ERROR: string terminated improperly");
+                       else
+                           yylval.actualChars[yyleng-2] = 0;
+                       return(MyFile);
+                       }
 
 \'[^'\n]*\'            {/* take care of ' in a string */
                         if (yytext[yyleng - 2] == '\\') {

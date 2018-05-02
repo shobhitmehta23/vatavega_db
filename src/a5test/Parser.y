@@ -140,10 +140,10 @@ SQL: SELECT WhatIWant FROM Tables WHERE AndList
 	isDDLQuery = 1;
 	//isCreateTableQuery = 1;
   	DDLQueryTableName = $3;
-  	reverse(createAttrList.begin(), createAttrList.end()); // our grammar parses the attributes in the reverse order.
+  	//reverse(createAttrList.begin(), createAttrList.end()); // our grammar parses the attributes in the reverse order.
 }
 
-| INSERT MyFile INTO Name
+| INSERT Name INTO Name //MyFile
 {
   	isDDLQuery = 2;
   	//isInsertTableQuery = 1;
@@ -171,17 +171,17 @@ OutPutOption: STDOUT
   	filePath = "";
 }
 
-| MyFile
-{
-  	outputMode = 1;
-  	//string fn($1);
-  	filePath = $1;
-}
-
 | NONE
 {
   	outputMode = 2;
   	filePath = "";
+}
+
+| Name  //MyFile
+{
+  	outputMode = 1;
+  	//string fn($1);
+  	filePath = $1;
 };
 
 Attributes: Name AttributeType ',' Attributes // non terminal, when more than one attributes present
@@ -220,6 +220,7 @@ FileType : HEAP
 | SORTED ON Atts
 {
   	dbFileType = 1;
+  	attsToSelect = $3;
 };
 
 WhatIWant: Function ',' Atts 

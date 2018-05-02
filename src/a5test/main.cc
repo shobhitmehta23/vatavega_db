@@ -139,7 +139,7 @@ int main(int args, char** argv) {
 		case 1:   // CREATE
 			cout << "Table name: " << DDLQueryTableName << endl;
 			cout << "DB file type: " << dbFileType << endl;
-			cout << "New Attributes: " << dbFileType << endl;
+			cout << "New Attributes: " << createAttrList.size() << endl;
 			for (struct CreateAttributes c : createAttrList) {
 				cout << "---create attr::  " << c.name << "  :  " << c.type
 						<< endl;
@@ -147,7 +147,7 @@ int main(int args, char** argv) {
 
 			if (dbFileType == 1) {
 				NameList * tempNameList = attsToSelect;
-				cout << " Sorted file on attributes: " << dbFileType << endl;
+				cout << " Sorted file on attributes: " << endl;
 				while (tempNameList != NULL) {
 					cout << "---attr::  " << tempNameList->name << endl;
 					tempNameList = tempNameList->next;
