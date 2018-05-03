@@ -82,14 +82,7 @@ int main(int args, char** argv) {
 	if (isDDLQuery > 0) {
 		switch (isDDLQuery) {
 		case 1:   // CREATE
-			cout << "Table name: " << DDLQueryTableName << endl;
-			cout << "DB file type: " << dbFileType << endl;
 			std::reverse(createAttrList.begin(), createAttrList.end());
-			cout << "New Attributes: " << createAttrList.size() << endl;
-			for (struct CreateAttributes c : createAttrList) {
-				cout << "---create attr::  " << c.name << "  :  " << c.type
-						<< endl;
-			}
 
 			if (dbFileType == 1) {
 				NameList * tempNameList = attsToSelect;
@@ -123,7 +116,6 @@ int main(int args, char** argv) {
 			break;
 		case 4: {
 			// SET OUTPUT
-			cout << "outputMode: " << outputMode << endl;
 			ofstream outfile;
 			outfile.open(OUTPUT_MODE_CONFIG_FILE, ios::out);
 
