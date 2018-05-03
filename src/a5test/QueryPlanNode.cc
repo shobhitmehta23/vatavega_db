@@ -51,7 +51,7 @@ void QueryPlanNode::executeQueryTreeHelper(QueryPlanNode *queryPlanNode) {
 
 	executeQueryTreeHelper(queryPlanNode->left);
 	executeQueryTreeHelper(queryPlanNode->right);
-	cout << "Node Type: " << queryPlanNode->nodeType << endl;
+	//cout << "Node Type: " << queryPlanNode->nodeType << endl;
 	queryPlanNode->executeNode();
 }
 
@@ -70,14 +70,10 @@ SelectFileNode::SelectFileNode(TableList* tbl, AndList* andList,
 			stats.group_to_table_info_map[stats.relation_to_group_map[string(
 					tableName)]];
 	//applySelectCondition(andList, stats);
-	/***************************************************************************************************
-	 *
-	 */
+	//***************************************************************************************************
 
 	AndList* ands = andList;
 	AndList* prev = ands;
-	//string tableName = string(
-	//		table->aliasAs == NULL ? table->tableName : table->aliasAs);
 	AndList* selectAndList = new AndList();
 	AndList* currentAndListPtr = selectAndList;
 	AndList* newAndList = new AndList();
@@ -107,7 +103,8 @@ SelectFileNode::SelectFileNode(TableList* tbl, AndList* andList,
 
 				if ((it == tableInfo->attributes.end())) {
 					auto it2 = tableInfo->attributes.find(
-							string(tableName) + "." + string(nameOperand->value));
+							string(tableName) + "."
+									+ string(nameOperand->value));
 					if ((it == tableInfo->attributes.end())) {
 						goToNextAnd = true;
 						break;
@@ -118,38 +115,23 @@ SelectFileNode::SelectFileNode(TableList* tbl, AndList* andList,
 			ors = ors->rightOr;
 		}
 		if (goToNextAnd) {
-			if(newAndListCopy->left == NULL){
+			if (newAndListCopy->left == NULL) {
 				newAndListCopy->left = ands->left;
-			}else{
+			} else {
 				newAndListCopy->rightAnd = new AndList;
 				newAndListCopy = newAndListCopy->rightAnd;
 				newAndListCopy->left = ands->left;
 			}
-			//ands = ands->rightAnd;
-			//continue;
-		}
-		else{
-		//just to handle the first time OR
+		} else {
+			//just to handle the first time OR
 			if (currentAndListPtr->left == NULL) {
 				currentAndListPtr->left = ands->left;
 			} else {
 				currentAndListPtr->rightAnd = new AndList;
 				currentAndListPtr = currentAndListPtr->rightAnd;
 				currentAndListPtr->left = ands->left;
-				//currentAndListPtr->rightAnd = ands;
-				//currentAndListPtr = currentAndListPtr->rightAnd;
 			}
 		}
-		//remove the AND clause from the Andlist.
-		/*if (ands->rightAnd != NULL) {
-			ands->left = ands->rightAnd->left;
-			ands->rightAnd = ands->rightAnd->rightAnd;
-		} else {
-			ands->left = NULL;
-			ands->rightAnd = NULL;
-			//prev->rightAnd = NULL;
-			break; // ands->rightAnd == NULL
-		}*/
 
 		ands = ands->rightAnd;
 
@@ -179,7 +161,6 @@ SelectFileNode::SelectFileNode(TableList* tbl, AndList* andList,
 
 	outSchema = sch;
 
-
 	//*************************************************************************************************
 	outputPipe = new Pipe(100, ++pipeIdCounter);
 	estimate = 0;
@@ -202,8 +183,6 @@ void SelectFileNode::executeNode() {
 	DBFile* tableFile = new DBFile;
 	tableFile->Open(string(strcat(table->tableName, ".bin")).c_str());
 	selectFileOp->Run(*tableFile, *outputPipe, *cnf, *literal);
-	//tableFile.Close();
-	//selectFileOp.WaitUntilDone();
 	/*Rel Op execution done.*/
 }
 
@@ -252,18 +231,17 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 			ors = ors->rightOr;
 		}
 		if (goToNextAnd) {
-			if(newAndListCopy->left == NULL){
+			if (newAndListCopy->left == NULL) {
 				newAndListCopy->left = ands->left;
-			}else{
+			} else {
 				newAndListCopy->rightAnd = new AndList;
 				newAndListCopy = currentAndListPtr->rightAnd;
 				newAndListCopy->left = ands->left;
 			}
 			//ands = ands->rightAnd;
 			//continue;
-		}
-		else{
-		//just to handle the first time OR
+		} else {
+			//just to handle the first time OR
 			if (currentAndListPtr->left == NULL) {
 				currentAndListPtr->left = ands->left;
 			} else {
@@ -276,15 +254,15 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 		}
 		//remove the AND clause from the Andlist.
 		/*if (ands->rightAnd != NULL) {
-			ands->left = ands->rightAnd->left;
-			ands->rightAnd = ands->rightAnd->rightAnd;
-		} else {
-			ands->left = NULL;
-			ands->rightAnd = NULL;
-			//prev->rightAnd = NULL;
-			break; // ands->rightAnd == NULL
-		}*/
-		
+		 ands->left = ands->rightAnd->left;
+		 ands->rightAnd = ands->rightAnd->rightAnd;
+		 } else {
+		 ands->left = NULL;
+		 ands->rightAnd = NULL;
+		 //prev->rightAnd = NULL;
+		 break; // ands->rightAnd == NULL
+		 }*/
+
 		ands = ands->rightAnd;
 
 	}
@@ -443,7 +421,6 @@ void SelectPipeNode::executeNode() {
 	/*Execute the relational operation.*/
 	SelectPipe *selectPipeOp = new SelectPipe;
 	selectPipeOp->Run(*inputPipe, *outputPipe, *cnf, *literal);
-	//joinOp.WaitUntilDone();
 	/*Rel Op execution done.*/
 }
 
@@ -465,7 +442,6 @@ void GroupByNode::executeNode() {
 	/*Execute the relational operation.*/
 	GroupBy *groupByOp = new GroupBy;
 	groupByOp->Run(*inputPipe, *outputPipe, *orderMaker, *function);
-	//groupByOp.WaitUntilDone();
 	/*Rel Op execution done.*/
 }
 
@@ -485,7 +461,6 @@ void SumNode::executeNode() {
 	/*Execute the relational operation.*/
 	Sum *sumOp = new Sum;
 	sumOp->Run(*inputPipe, *outputPipe, *function);
-	//sumOp.WaitUntilDone();
 	/*Rel Op execution done.*/
 }
 
@@ -509,7 +484,6 @@ void ProjectNode::executeNode() {
 	Project *projectOp = new Project;
 	projectOp->Run(*inputPipe, *outputPipe, keepme, numOfAttsInput,
 			numOfAttsOutput);
-	//projectOp.WaitUntilDone();
 	/*Rel Op execution done.*/
 }
 
@@ -540,7 +514,7 @@ void WriteOutNode::printNode() {
 }
 
 void WriteOutNode::executeNode() {
-	cout << "Inside write out **************************************" << endl;
+	//cout << "Inside write out **************************************" << endl;
 	/*Execute the relational operation.*/
 	WriteOut *writeOp = new WriteOut;
 	writeOp->Run(*inputPipe, filePointer, *outSchema);
