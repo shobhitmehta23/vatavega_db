@@ -69,7 +69,118 @@ SelectFileNode::SelectFileNode(TableList* tbl, AndList* andList,
 	this->tableInfo =
 			stats.group_to_table_info_map[stats.relation_to_group_map[string(
 					tableName)]];
-	applySelectCondition(andList, stats);
+	//applySelectCondition(andList, stats);
+	/***************************************************************************************************
+	 *
+	 */
+
+	AndList* ands = andList;
+	AndList* prev = ands;
+	//string tableName = string(
+	//		table->aliasAs == NULL ? table->tableName : table->aliasAs);
+	AndList* selectAndList = new AndList();
+	AndList* currentAndListPtr = selectAndList;
+	AndList* newAndList = new AndList();
+	AndList* newAndListCopy = newAndList;
+	currentAndListPtr->left = NULL;
+	while (ands != NULL) {
+		bool goToNextAnd = false;
+		OrList* ors = ands->left;
+		while (ors != NULL) {
+			if (ors->left != NULL) {
+				Operand *left = ors->left->left;
+				Operand *right = ors->left->right;
+
+				if (left->code == NAME && right->code == NAME) {
+					goToNextAnd = true;
+					break;
+				}
+				Operand* nameOperand;
+				if (left->code == NAME) {
+					nameOperand = left;
+				} else {
+					nameOperand = right;
+				}
+
+				auto it = tableInfo->attributes.find(
+						string(nameOperand->value));
+
+				if ((it == tableInfo->attributes.end())) {
+					auto it2 = tableInfo->attributes.find(
+							string(tableName) + "." + string(nameOperand->value));
+					if ((it == tableInfo->attributes.end())) {
+						goToNextAnd = true;
+						break;
+					}
+				}
+
+			}
+			ors = ors->rightOr;
+		}
+		if (goToNextAnd) {
+			if(newAndListCopy->left == NULL){
+				newAndListCopy->left = ands->left;
+			}else{
+				newAndListCopy->rightAnd = new AndList;
+				newAndListCopy = newAndListCopy->rightAnd;
+				newAndListCopy->left = ands->left;
+			}
+			//ands = ands->rightAnd;
+			//continue;
+		}
+		else{
+		//just to handle the first time OR
+			if (currentAndListPtr->left == NULL) {
+				currentAndListPtr->left = ands->left;
+			} else {
+				currentAndListPtr->rightAnd = new AndList;
+				currentAndListPtr = currentAndListPtr->rightAnd;
+				currentAndListPtr->left = ands->left;
+				//currentAndListPtr->rightAnd = ands;
+				//currentAndListPtr = currentAndListPtr->rightAnd;
+			}
+		}
+		//remove the AND clause from the Andlist.
+		/*if (ands->rightAnd != NULL) {
+			ands->left = ands->rightAnd->left;
+			ands->rightAnd = ands->rightAnd->rightAnd;
+		} else {
+			ands->left = NULL;
+			ands->rightAnd = NULL;
+			//prev->rightAnd = NULL;
+			break; // ands->rightAnd == NULL
+		}*/
+
+		ands = ands->rightAnd;
+
+	}
+	currentAndListPtr->rightAnd = NULL;
+	newAndListCopy->rightAnd = NULL;
+	andList->left = newAndList->left;
+	andList->rightAnd = newAndList->rightAnd;
+
+	char * ch[] = { tableName };
+	//calculate and apply the estimates
+	stats.Apply(selectAndList, ch, 1);
+
+	// suck up the schema from the file
+	Schema* sch = new Schema("catalog", table->tableName); //FIXME hardcoded schema name
+	int numberOfAtt = sch->GetNumAtts();
+	Attribute * attributes = sch->GetAtts();
+
+	for (int i = 0; i < numberOfAtt; i++) {
+		char * tempName = mergeThreeString(table->aliasAs, ".",
+				attributes[i].name);
+		attributes[i].name = tempName;
+	}
+	literal = new Record;
+	cnf = new CNF;
+	cnf->GrowFromParseTree(selectAndList, sch, *literal);
+
+	outSchema = sch;
+
+
+	//*************************************************************************************************
 	outputPipe = new Pipe(100, ++pipeIdCounter);
 	estimate = 0;
 }
@@ -103,6 +214,8 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 			table->aliasAs == NULL ? table->tableName : table->aliasAs);
 	AndList* selectAndList = new AndList();
 	AndList* currentAndListPtr = selectAndList;
+	AndList* newAndList = new AndList();
+	AndList* newAndListCopy = newAndList;
 	currentAndListPtr->left = NULL;
 	while (ands != NULL) {
 		bool goToNextAnd = false;
@@ -139,28 +252,46 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 			ors = ors->rightOr;
 		}
 		if (goToNextAnd) {
-			prev = ands;
-			ands = ands->rightAnd;
-			continue;
+			if(newAndListCopy->left == NULL){
+				newAndListCopy->left = ands->left;
+			}else{
+				newAndListCopy->rightAnd = new AndList;
+				newAndListCopy = currentAndListPtr->rightAnd;
+				newAndListCopy->left = ands->left;
+			}
+			//ands = ands->rightAnd;
+			//continue;
 		}
+		else{
 		//just to handle the first time OR
-		if (currentAndListPtr->left == NULL) {
-			currentAndListPtr->left = ands->left;
-		} else {
-			currentAndListPtr->rightAnd = ands;
-			currentAndListPtr = currentAndListPtr->rightAnd;
+			if (currentAndListPtr->left == NULL) {
+				currentAndListPtr->left = ands->left;
+			} else {
+				currentAndListPtr->rightAnd = new AndList;
+				currentAndListPtr = currentAndListPtr->rightAnd;
+				currentAndListPtr->left = ands->left;
+				//currentAndListPtr->rightAnd = ands;
+				//currentAndListPtr = currentAndListPtr->rightAnd;
+			}
 		}
 		//remove the AND clause from the Andlist.
-		if (ands->rightAnd != NULL) {
+		/*if (ands->rightAnd != NULL) {
 			ands->left = ands->rightAnd->left;
 			ands->rightAnd = ands->rightAnd->rightAnd;
 		} else {
-			prev->rightAnd = NULL;
+			ands->left = NULL;
+			ands->rightAnd = NULL;
+			//prev->rightAnd = NULL;
 			break; // ands->rightAnd == NULL
-		}
+		}*/
+		
+		ands = ands->rightAnd;
 
 	}
 	currentAndListPtr->rightAnd = NULL;
+	newAndListCopy->rightAnd = NULL;
+	andList->left = newAndList->left;
+	andList->rightAnd = newAndList->rightAnd;
 
 	char * ch[] = { (char*) tableName.c_str() };
 	//calculate and apply the estimates
