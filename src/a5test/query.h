@@ -72,48 +72,48 @@ char *test11 =
 		FROM part AS p, supplier AS s, partsupp AS ps \
 		WHERE (p.p_partkey = ps.ps_partkey) AND \
 			  (s.s_suppkey = ps.ps_suppkey) AND \
-			  (s.s_acctbal > 2500)";
+			  (s.s_acctbal > 2500.0)";
 
 char *test12 =
-		"SELECT SUM (ps.ps_supplycost) \
-		FROM part AS p, supplier AS s, partsupp AS ps \
-		WHERE (p.p_partkey = ps.ps_partkey) AND \
-			  (s.s_suppkey = ps.ps_suppkey) AND \
-			  (s.s_acctbal > 2500)";
+"SELECT SUM (c.c_acctbal) \
+FROM customer AS c, orders AS o \
+WHERE (c.c_custkey = o.o_custkey) AND \
+	  (o.o_totalprice < 10000.0)";
 
 char *test13 =
-		"SELECT SUM (ps.ps_supplycost) \
-		FROM part AS p, supplier AS s, partsupp AS ps \
-		WHERE (p.p_partkey = ps.ps_partkey) AND \
-			  (s.s_suppkey = ps.ps_suppkey) AND \
-			  (s.s_acctbal > 2500)";
+		"SELECT l.l_orderkey, l.l_partkey, l.l_suppkey \
+		FROM lineitem AS l \
+		WHERE (l.l_returnflag = 'R') AND \
+			  (l.l_discount < 0.04 OR l.l_shipmode = 'MAIL') AND \
+			  (l.l_orderkey > 5000) AND (l.l_orderkey < 6000)";
 
 char *test14 =
-		"SELECT SUM (ps.ps_supplycost) \
-		FROM part AS p, supplier AS s, partsupp AS ps \
-		WHERE (p.p_partkey = ps.ps_partkey) AND \
-			  (s.s_suppkey = ps.ps_suppkey) AND \
-			  (s.s_acctbal > 2500)";
+		"SELECT ps.ps_partkey, ps.ps_suppkey, ps.ps_availqty \
+FROM partsupp AS ps \
+WHERE (ps.ps_partkey < 100) AND (ps.ps_suppkey < 50)";
 
 char *test15 =
-		"SELECT SUM (ps.ps_supplycost) \
-		FROM part AS p, supplier AS s, partsupp AS ps \
-		WHERE (p.p_partkey = ps.ps_partkey) AND \
-			  (s.s_suppkey = ps.ps_suppkey) AND \
-			  (s.s_acctbal > 2500)";
+		"SELECT SUM (l.l_discount) \
+FROM customer AS c, orders AS o, lineitem AS l \
+WHERE (c.c_custkey = o.o_custkey) AND \
+	  (o.o_orderkey = l.l_orderkey) AND \
+	  (c.c_name = 'Customer#000070919') AND \
+	  (l.l_quantity > 30.0) AND (l.l_discount < 0.03)";
 
 char *test16 =
-		"SELECT SUM (ps.ps_supplycost) \
-		FROM part AS p, supplier AS s, partsupp AS ps \
-		WHERE (p.p_partkey = ps.ps_partkey) AND \
-			  (s.s_suppkey = ps.ps_suppkey) AND \
-			  (s.s_acctbal > 2500)";
+		"SELECT DISTINCT s.s_name \
+FROM supplier AS s, part AS p, partsupp AS ps \
+WHERE (s.s_suppkey = ps.ps_suppkey) AND \
+	  (p.p_partkey = ps.ps_partkey) AND \
+	  (p.p_mfgr = 'Manufacturer#4') AND \
+	  (ps.ps_supplycost < 350.0)";
 
 char *test17 =
-		"SELECT SUM (ps.ps_supplycost) \
-		FROM part AS p, supplier AS s, partsupp AS ps \
-		WHERE (p.p_partkey = ps.ps_partkey) AND \
-			  (s.s_suppkey = ps.ps_suppkey) AND \
-			  (s.s_acctbal > 2500)";
+		"SELECT SUM (l.l_extendedprice * (1 - l.l_discount)), l.l_orderkey, o.o_orderdate, o.o_shippriority \
+FROM customer AS c, orders AS o, lineitem AS l \
+WHERE (c.c_mktsegment = 'BUILDING') AND \
+      (c.c_custkey = o.o_custkey) AND (l.l_orderkey = o.o_orderkey) AND \
+	  (l.l_orderkey < 100 OR o.o_orderkey < 100) \
+GROUP BY l_orderkey, o_orderdate, o_shippriority";
 
-char * tests[10] = {test1, test2, test3, test4, test5, test6, test7, test8, test9, test10};
+char * tests[17] = {test1, test2, test3, test4, test5, test6, test7, test8, test9, test10, test11, test12, test13, test14, test15, test16, test17};

@@ -37,8 +37,8 @@ public:
 	QueryNodeType nodeType;
 	static int pipeIdCounter;
 	Pipe *outputPipe;
-	CNF cnf;
-	Record literal;
+	CNF* cnf;
+	Record* literal;
 
 };
 

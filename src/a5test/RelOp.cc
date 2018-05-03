@@ -471,15 +471,15 @@ void *join(void *thread_args) {
 	Record *literal = args->literal;
 	int runlen = args->runlen;
 
-	OrderMaker left_order_maker;
-	OrderMaker right_order_maker;
-	int numberOfArttrs = selOp->GetSortOrders(left_order_maker,
-			right_order_maker);
+	OrderMaker *left_order_maker = new OrderMaker;
+	OrderMaker *right_order_maker = new OrderMaker;;
+	int numberOfArttrs = selOp->GetSortOrders(*left_order_maker,
+			*right_order_maker);
 
 	//Do sort merge join.
 	if (numberOfArttrs != 0) {
-		sortMergeJoin(inPipeL, inPipeR, outPipe, left_order_maker,
-				right_order_maker, runlen, selOp, literal);
+		sortMergeJoin(inPipeL, inPipeR, outPipe, *left_order_maker,
+				*right_order_maker, runlen, selOp, literal);
 	}
 //Do block nested loop join.
 	else {
@@ -497,16 +497,16 @@ void sortMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
 
 	ComparisonEngine comp_engine;
 
-	Pipe left_out(outPipe->getBufferSize());
-	Pipe right_out(outPipe->getBufferSize());
-	BigQ left_big_q(*inPipeL, left_out, left_order_maker, runlen);
-	BigQ right_big_q(*inPipeR, right_out, right_order_maker, runlen);
+	Pipe *left_out = new Pipe(outPipe->getBufferSize());
+	Pipe *right_out = new Pipe(outPipe->getBufferSize());
+	BigQ *left_big_q = new BigQ(*inPipeL, *left_out, left_order_maker, runlen);
+	BigQ *right_big_q= new BigQ(*inPipeR, *right_out, right_order_maker, runlen);
 
 	Record* left = new Record;
 	Record* right = new Record;
 
-	int left_has_records = left_out.Remove(left);
-	int right_has_records = right_out.Remove(right);
+	int left_has_records = left_out->Remove(left);
+	int right_has_records = right_out->Remove(right);
 
 	int creatKeepAttributeArray = 1;
 	int * keepAttributeArray;
@@ -515,9 +515,9 @@ void sortMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
 		int equals = comp_engine.Compare(left, &left_order_maker, right,
 				&right_order_maker);
 		if (equals < 0) {
-			left_has_records = left_out.Remove(left);
+			left_has_records = left_out->Remove(left);
 		} else if (equals > 0) {
-			right_has_records = right_out.Remove(right);
+			right_has_records = right_out->Remove(right);
 		} else {
 			//nested join for equal records
 			vector<Record *> left_buffer;
@@ -525,7 +525,7 @@ void sortMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
 
 			Record *temp_left = new Record;
 
-			while (left_has_records = left_out.Remove(temp_left)) {
+			while (left_has_records = left_out->Remove(temp_left)) {
 				if (comp_engine.Compare(left, temp_left, &left_order_maker)) {
 					left_buffer.push_back(left);
 					left = temp_left;
@@ -543,7 +543,7 @@ void sortMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
 
 			Record *temp_right = new Record;
 
-			while (right_has_records = right_out.Remove(temp_right)) {
+			while (right_has_records = right_out->Remove(temp_right)) {
 				if (comp_engine.Compare(right, temp_right,
 						&right_order_maker)) {
 					right_buffer.push_back(right);
@@ -559,17 +559,19 @@ void sortMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
 				right_buffer.push_back(right);
 			}
 
-			for (Record * temp_left : left_buffer) {
-				for (Record * temp_right : right_buffer) {
+			for (Record * t_left : left_buffer) {
+				for (Record * t_right : right_buffer) {
 					//code to create a merged record and insert it in the out pipe
-
-					if (comp_engine.Compare(temp_left, temp_right, literal,
+					if(t_right->bits == NULL){
+						continue;
+					}
+					if (comp_engine.Compare(t_left, t_right, literal,
 							selOp) == 0) {
 						continue;
 					}
 
-					int numAttLeft = temp_left->getNumberofAttributes();
-					int numAttRight = temp_right->getNumberofAttributes();
+					int numAttLeft = t_left->getNumberofAttributes();
+					int numAttRight = t_right->getNumberofAttributes();
 
 					if (creatKeepAttributeArray) {
 
@@ -586,14 +588,14 @@ void sortMergeJoin(Pipe *inPipeL, Pipe *inPipeR, Pipe *outPipe,
 						}
 					}
 
-					mergeAndAddRecordsToPipe(temp_left, temp_right,
+					mergeAndAddRecordsToPipe(t_left, t_right,
 							keepAttributeArray, numAttLeft, numAttRight,
 							outPipe);
 
-					delete temp_right;
+					delete t_right;
 
 				}
-				delete temp_left;
+				delete t_left;
 			}
 		}
 	}

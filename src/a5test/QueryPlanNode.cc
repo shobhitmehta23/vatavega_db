@@ -81,7 +81,7 @@ void SelectFileNode::printNode() {
 	printSchema(*outSchema);
 	cout << endl;
 	cout << "Select CNF" << endl;
-	cnf.Print();
+	cnf->Print();
 	printNodeBoundary();
 }
 
@@ -90,7 +90,7 @@ void SelectFileNode::executeNode() {
 	SelectFile* selectFileOp = new SelectFile;
 	DBFile* tableFile = new DBFile;
 	tableFile->Open(string(strcat(table->tableName, ".bin")).c_str());
-	selectFileOp->Run(*tableFile, *outputPipe, cnf, literal);
+	selectFileOp->Run(*tableFile, *outputPipe, *cnf, *literal);
 	//tableFile.Close();
 	//selectFileOp.WaitUntilDone();
 	/*Rel Op execution done.*/
@@ -176,8 +176,9 @@ void SelectFileNode::applySelectCondition(AndList* andList, Statistics &stats) {
 				attributes[i].name);
 		attributes[i].name = tempName;
 	}
-
-	cnf.GrowFromParseTree(selectAndList, sch, literal);
+	literal = new Record;
+	cnf = new CNF;
+	cnf->GrowFromParseTree(selectAndList, sch, *literal);
 
 	outSchema = sch;
 }
@@ -191,14 +192,14 @@ void JoinNode::printNode() {
 	printSchema(*outSchema);
 	cout << endl;
 	cout << "Join CNF" << endl;
-	cnf.Print();
+	cnf->Print();
 	printNodeBoundary();
 }
 
 void JoinNode::executeNode() {
 	/*Execute the relational operation.*/
 	Join *joinOp = new Join;
-	joinOp->Run(*inputPipe1, *inputPipe2, *outputPipe, cnf, literal);
+	joinOp->Run(*inputPipe1, *inputPipe2, *outputPipe, *cnf, *literal);
 	//joinOp.WaitUntilDone();
 	/*Rel Op execution done.*/
 }
@@ -262,9 +263,10 @@ JoinNode::JoinNode(QueryPlanNode* node1, QueryPlanNode* node2, bool doApply,
 		outSchema = new Schema(
 				(char*) std::to_string(outputPipe->getPipeId()).c_str(),
 				numberOfAtt2 + numberOfAtt1, attributes);
-
-		cnf.GrowFromParseTree(query, node1->outSchema, node2->outSchema,
-				literal);
+		literal = new Record;
+		cnf = new CNF;
+		cnf->GrowFromParseTree(query, node1->outSchema, node2->outSchema,
+				*literal);
 		left = node1;
 		right = node2;
 	}
@@ -289,8 +291,9 @@ SelectPipeNode::SelectPipeNode(vector<AndList*> multiTableSelects,
 	outputPipe = new Pipe(100, ++pipeIdCounter);
 	char** arr = node->relNames.data();
 	stats.Apply(query, arr, node->relNames.size());
-
-	cnf.GrowFromParseTree(query, outSchema, literal);
+	literal = new Record;
+	cnf = new CNF;
+	cnf->GrowFromParseTree(query, outSchema, *literal);
 }
 
 void SelectPipeNode::printNode() {
@@ -301,14 +304,14 @@ void SelectPipeNode::printNode() {
 	printSchema(*outSchema);
 	cout << endl;
 	cout << "Select CNF" << endl;
-	cnf.Print();
+	cnf->Print();
 	printNodeBoundary();
 }
 
 void SelectPipeNode::executeNode() {
 	/*Execute the relational operation.*/
 	SelectPipe *selectPipeOp = new SelectPipe;
-	selectPipeOp->Run(*inputPipe, *outputPipe, cnf, literal);
+	selectPipeOp->Run(*inputPipe, *outputPipe, *cnf, *literal);
 	//joinOp.WaitUntilDone();
 	/*Rel Op execution done.*/
 }
@@ -427,6 +430,7 @@ int print_pipe_to_stdio(Pipe &in_pipe, Schema *schema, bool print) {
 		}
 		cnt++;
 	}
+	cout<< "Number of records returned: "<< cnt<<endl;
 	return cnt;
 }
 

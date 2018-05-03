@@ -166,7 +166,10 @@ int main(int args, char** argv) {
 		//nodes.at(0)->printQueryTree();
 
 		QueryPlanNode* root = constructTree(nodes.at(0));
-		root->printQueryTree();
+		if(outputMode ==2){
+		root->printQueryTree();}else{
+			root->executeQueryTree();
+		}
 	}
 
 }
@@ -410,6 +413,11 @@ ProjectNode * constructProjectNode(QueryPlanNode * child) {
 	projectNode->numOfAttsOutput = keepAttributes.size();
 	projectNode->numOfAttsInput = numOfAtts;
 	projectNode->keepme = keepAttributes.data();
+	projectNode->keepme = (int *) malloc(sizeof(int) * keepAttributes.size());
+	int count = 0;
+	for (auto x : keepAttributes) {
+		projectNode->keepme[count++] = x;
+	}
 
 	projectNode->outSchema = new Schema("dummy", selectedAttributes.size(),
 			selectedAttributes.data());
