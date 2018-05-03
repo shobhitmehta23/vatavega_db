@@ -14,10 +14,12 @@
 
 class DBFile {
 private:
-	DBFileBase *dbfile;
+	DBFileBase *dbfile = NULL;
+	bool closed = false;
 
 public:
 	DBFile (); 
+	~DBFile();
 
 	int Create (const char *fpath, fType file_type, void *startup);
 	int Open (const char *fpath);

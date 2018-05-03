@@ -6,6 +6,8 @@
 #include "QueryPlanNode.h"
 #include "Statistics.h"
 #include "AndListPermutationIterator.h"
+#include <algorithm>
+#include "query.h";
 
 extern struct FuncOperator *finalFunction; // the aggregate function (NULL if no agg)
 extern struct TableList *tables; // the list of tables and aliases in the query
@@ -34,6 +36,11 @@ ProjectNode * constructProjectNode(QueryPlanNode * child);
 DistinctNode * constructDistinctNode(QueryPlanNode * child);
 WriteOutNode * constructWriteOutNode(QueryPlanNode * child);
 
+static string CATALOG_FILE_NAME = "catalog";
+
+void add_to_catalog(string rel_name, vector<CreateAttributes> attributes);
+void remove_from_catalog(string rel_name);
+
 extern "C" struct YY_BUFFER_STATE *yy_scan_string(const char*);
 
 using namespace std;
@@ -49,83 +56,14 @@ void popNextTwoJoinNodes(vector<QueryPlanNode*> &copyList, AndList* clause,
 void findAndApplyBestJoinPlan(vector<QueryPlanNode*> &nodes,
 		AndList* joinConditions, Statistics &stats);
 
-char *test1 = "SELECT SUM (ps.ps_supplycost), s.s_suppkey \ 
-FROM part AS p, supplier AS s, partsupp AS ps \
-WHERE (p.p_partkey = ps.ps_partkey) AND \
-(s.s_suppkey = ps.ps_suppkey) AND (s.s_acctbal > 2500) \
-GROUP BY s.s_suppkey";
 
-char *test2 =
-		"SELECT SUM (c.c_acctbal),c.c_name \
-		FROM customer AS c, orders AS o \
-		WHERE (c.c_custkey = o.o_custkey) AND (o.o_totalprice < 10000) \
-		GROUP BY c.c_name";
-
-char *test3 =
-		"SELECT l.l_orderkey, l.l_partkey, l.l_suppkey \
-		FROM lineitem AS l \
-		WHERE (l.l_returnflag = 'R') AND \ 
-		      (l.l_discount < 0.04 OR l.l_shipmode = 'MAIL')";
-
-
-char *test4 =
-		"SELECT DISTINCT c1.c_name, c1.c_address, c1.c_acctbal \ 
-		FROM customer AS c1, customer AS c2  \
-		WHERE (c1.c_nationkey = c2.c_nationkey) AND \
-			  (c1.c_name ='Customer#000070919')";
-
-
-char *test5 = "SELECT SUM(l.l_discount) \
-FROM customer AS c, orders AS o, lineitem AS l \
-WHERE (c.c_custkey = o.o_custkey) AND \
-      (o.o_orderkey = l.l_orderkey) AND \
-      (c.c_name = 'Customer#000070919') AND \ 
-	  (l.l_quantity > 30) AND (l.l_discount < 0.03)";
-
-char *test6 =
-		"SELECT l.l_orderkey \
-		FROM lineitem AS l \
-		WHERE (l.l_quantity > 30)";
-
-char *test7 =
-		"SELECT DISTINCT c.c_name \
-		FROM lineitem AS l, orders AS o, customer AS c, nation AS n, region AS r \
-		WHERE (l.l_orderkey = o.o_orderkey) AND \
-		      (o.o_custkey = c.c_custkey) AND \
-			  (c.c_nationkey = n.n_nationkey) AND \
-			  (n.n_regionkey = r.r_regionkey)";
-
-char *test8 =
-		"SELECT l.l_discount \
-		FROM lineitem AS l, orders AS o, customer AS c, nation AS n, region AS r \ 
-		WHERE (l.l_orderkey = o.o_orderkey) AND \
-			  (o.o_custkey = c.c_custkey) AND \
-			  (c.c_nationkey = n.n_nationkey) AND \
-			  (n.n_regionkey = r.r_regionkey) AND \
-			  (r.r_regionkey = 1) AND (o.o_orderkey < 10000)";
-
-
-
-char *test9 =
-		"SELECT SUM (l.l_discount) \
-		FROM customer AS c, orders AS o, lineitem AS l \
-		WHERE (c.c_custkey = o.o_custkey) AND (o.o_orderkey = l.l_orderkey) AND \
-			  (c.c_name = 'Customer#000070919') AND (l.l_quantity > 30) AND \
-			  (l.l_discount < 0.03)";
-
-char *test10 =
-		"SELECT SUM (l.l_extendedprice * l.l_discount) \
-	FROM lineitem AS l \
-	WHERE (l.l_discount<0.07) AND (l.l_quantity < 24)";
-
-char * tests[10] = {test1, test2, test3, test4, test5, test6, test7, test8, test9, test10};
 
 int main(int args, char** argv) {
 
 	if (args == 1) {
 		yyparse();
 	} else {
-		yy_scan_string (tests[atoi(argv[1]) - 1]);
+		yy_scan_string(tests[atoi(argv[1]) - 1]);
 		yyparse();
 	}
 
@@ -139,6 +77,7 @@ int main(int args, char** argv) {
 		case 1:   // CREATE
 			cout << "Table name: " << DDLQueryTableName << endl;
 			cout << "DB file type: " << dbFileType << endl;
+			std::reverse(createAttrList.begin(), createAttrList.end());
 			cout << "New Attributes: " << createAttrList.size() << endl;
 			for (struct CreateAttributes c : createAttrList) {
 				cout << "---create attr::  " << c.name << "  :  " << c.type
@@ -152,14 +91,28 @@ int main(int args, char** argv) {
 					cout << "---attr::  " << tempNameList->name << endl;
 					tempNameList = tempNameList->next;
 				}
+			} else {
+				DBFile dbfile;
+				dbfile.Create(
+						(string(DDLQueryTableName) + string(".bin")).c_str(),
+						heap, NULL);
+				add_to_catalog(DDLQueryTableName, createAttrList);
 			}
 			break;
-		case 2:   //INSERT INTO
-			cout << "Table name: " << DDLQueryTableName << endl;
-			cout << "File path: " << filePath << endl;
+		case 2: {
+			//INSERT INTO
+			DBFile dbfile;
+			string DDLQueryTableNameCopy = DDLQueryTableName + ".bin";
+			dbfile.Open(DDLQueryTableNameCopy.c_str());
+			Schema schema((char *) CATALOG_FILE_NAME.c_str(),
+					(char *) DDLQueryTableName.c_str());
+			dbfile.Load(schema, filePath.c_str());
+		}
 			break;
 		case 3:   // DROP TABLE
-			cout << "Table name: " << DDLQueryTableName << endl;
+			remove_from_catalog(DDLQueryTableName);
+			remove((DDLQueryTableName + ".bin").c_str());
+			remove((DDLQueryTableName + ".bin.meta").c_str());
 			break;
 		case 4:   // SET OUTPUT
 			cout << "outputMode: " << outputMode << endl;
@@ -578,3 +531,71 @@ QueryPlanNode * constructTree(QueryPlanNode * rootUptillNow) {
 
 	return constructWriteOutNode(root);
 }
+
+void add_to_catalog(string rel_name, vector<CreateAttributes> attributes) {
+	std::ofstream outfile;
+	outfile.open(CATALOG_FILE_NAME, std::ios_base::app);
+	outfile << endl;
+	outfile << "BEGIN" << endl;
+	outfile << rel_name << endl;
+	outfile << (rel_name + string(".tbl")) << endl;
+
+	string what_to_print[3] { "Int", "Double", "String" };
+
+	for (auto x : attributes) {
+		outfile << x.name << ' ';
+		outfile << what_to_print[x.type] << endl;
+	}
+
+	outfile << "END" << endl;
+}
+
+void remove_from_catalog(string rel_name) {
+	string catalog_content_file = "";
+
+	ifstream infile;
+	infile.open(CATALOG_FILE_NAME);
+
+	string line;
+	while (getline(infile, line)) {
+		if (line.compare(string("BEGIN")) == 0) {
+			string temp_entry = "";
+
+			temp_entry += line;
+			temp_entry += "\n";
+			getline(infile, line);
+
+			bool copy_entry = true;
+			if (line.compare(rel_name) == 0) {
+				copy_entry = false;
+			} else {
+				temp_entry += line;
+				temp_entry += "\n";
+			}
+
+			while (getline(infile, line)) {
+
+				if (copy_entry) {
+					temp_entry += line;
+					temp_entry += "\n";
+				}
+				if (line.compare("END") == 0) {
+					break;
+				}
+			}
+
+			if (copy_entry) {
+				catalog_content_file += temp_entry;
+				catalog_content_file += "\n";
+			}
+		}
+	}
+
+	infile.close();
+
+	ofstream outfile;
+	outfile.open(CATALOG_FILE_NAME, ios::out);
+	outfile << catalog_content_file;
+	outfile.close();
+}
+

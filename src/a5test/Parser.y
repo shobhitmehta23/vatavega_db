@@ -143,7 +143,7 @@ SQL: SELECT WhatIWant FROM Tables WHERE AndList
   	//reverse(createAttrList.begin(), createAttrList.end()); // our grammar parses the attributes in the reverse order.
 }
 
-| INSERT Name INTO Name //MyFile
+| INSERT String INTO Name //MyFile
 {
   	isDDLQuery = 2;
   	//isInsertTableQuery = 1;
@@ -177,7 +177,7 @@ OutPutOption: STDOUT
   	filePath = "";
 }
 
-| Name  //MyFile
+| String  //MyFile
 {
   	outputMode = 1;
   	//string fn($1);
