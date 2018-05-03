@@ -121,14 +121,6 @@ void yyerror(char*s);
   			return(Name);
 			}     
 
-\'[A-Za-z0-9_\/\.]+\' {yylval.actualChars = strdup(yytext + 1);
-                       if (yylval.actualChars[yyleng-2] != '\'')
-                           yyerror("ERROR: string terminated improperly");
-                       else
-                           yylval.actualChars[yyleng-2] = 0;
-                       return(MyFile);
-                       }
-
 \'[^'\n]*\'            {/* take care of ' in a string */
                         if (yytext[yyleng - 2] == '\\') {
                                 yymore();
