@@ -186,9 +186,13 @@ void *writeOut(void *thread_args) {
 	Schema *mySchema = args->mySchema;
 
 	Record* temp_rec = new Record;
+	int count = 0;
 	while (inPipe->Remove(temp_rec)) {
+		count++;
 		temp_rec->Print(mySchema, outFile);
 	}
+
+	fprintf(outFile, "Query returned %d records\n", count);
 	delete temp_rec;
 	delete args;
 }
