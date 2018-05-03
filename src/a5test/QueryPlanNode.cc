@@ -542,13 +542,10 @@ void WriteOutNode::printNode() {
 void WriteOutNode::executeNode() {
 	cout << "Inside write out **************************************" << endl;
 	/*Execute the relational operation.*/
-	if (false) {
-		WriteOut *writeOp = new WriteOut;
-		writeOp->Run(*inputPipe, filePointer, *outSchema);
-		//writeOp.WaitUntilDone();
-	} else {
-		print_pipe_to_stdio(*inputPipe, outSchema, true);
-	}
+	WriteOut *writeOp = new WriteOut;
+	writeOp->Run(*inputPipe, filePointer, *outSchema);
+	writeOp->WaitUntilDone();
+
 	/*Rel Op execution done.*/
 }
 
@@ -561,7 +558,7 @@ int print_pipe_to_stdio(Pipe &in_pipe, Schema *schema, bool print) {
 		}
 		cnt++;
 	}
-	cout<< "Number of records returned: "<< cnt<<endl;
+	cout << "Number of records returned: " << cnt << endl;
 	return cnt;
 }
 

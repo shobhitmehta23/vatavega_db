@@ -8,6 +8,7 @@
 #include "AndListPermutationIterator.h"
 #include <algorithm>
 #include "query.h";
+#include <chrono>
 
 extern struct FuncOperator *finalFunction; // the aggregate function (NULL if no agg)
 extern struct TableList *tables; // the list of tables and aliases in the query
@@ -37,13 +38,17 @@ DistinctNode * constructDistinctNode(QueryPlanNode * child);
 WriteOutNode * constructWriteOutNode(QueryPlanNode * child);
 
 static string CATALOG_FILE_NAME = "catalog";
+static string OUTPUT_MODE_CONFIG_FILE = "output.config";
+static bool EVALUATE = true;
 
 void add_to_catalog(string rel_name, vector<CreateAttributes> attributes);
 void remove_from_catalog(string rel_name);
+bool does_file_exist(const std::string& name);
 
 extern "C" struct YY_BUFFER_STATE *yy_scan_string(const char*);
 
 using namespace std;
+using namespace std::chrono;
 
 extern "C" {
 int yyparse(void);   // defined in y.tab.c
@@ -56,8 +61,6 @@ void popNextTwoJoinNodes(vector<QueryPlanNode*> &copyList, AndList* clause,
 void findAndApplyBestJoinPlan(vector<QueryPlanNode*> &nodes,
 		AndList* joinConditions, Statistics &stats);
 
-
-
 int main(int args, char** argv) {
 
 	if (args == 1) {
@@ -69,6 +72,10 @@ int main(int args, char** argv) {
 
 	Statistics::writeStatisticsForTPCH();
 	Statistics stats;
+
+	// start timer
+	auto start = high_resolution_clock::now();
+
 	stats.Read("stats.txt");
 
 	//If DDL query, e.g. CREATE, INSERT, DROP or SET OUTPUT.
@@ -114,9 +121,20 @@ int main(int args, char** argv) {
 			remove((DDLQueryTableName + ".bin").c_str());
 			remove((DDLQueryTableName + ".bin.meta").c_str());
 			break;
-		case 4:   // SET OUTPUT
+		case 4: {
+			// SET OUTPUT
 			cout << "outputMode: " << outputMode << endl;
+			ofstream outfile;
+			outfile.open(OUTPUT_MODE_CONFIG_FILE, ios::out);
+
+			outfile << outputMode << endl;
+			if (outputMode == 1) {
+				outfile << filePath << endl;
+			}
+
+			outfile.close();
 			break;
+		}
 		default:
 			break;
 
@@ -166,11 +184,18 @@ int main(int args, char** argv) {
 		//nodes.at(0)->printQueryTree();
 
 		QueryPlanNode* root = constructTree(nodes.at(0));
-		if(outputMode ==2){
-		root->printQueryTree();}else{
+
+		if (EVALUATE) {
 			root->executeQueryTree();
+		} else {
+			root->printQueryTree();
 		}
 	}
+
+	auto stop = high_resolution_clock::now();
+	auto duration = duration_cast<microseconds>(stop - start);
+	cout << "Query took: "
+	         << (duration.count() / 1000000.0) << " seconds" << endl;
 
 }
 
@@ -373,8 +398,33 @@ WriteOutNode * constructWriteOutNode(QueryPlanNode * child) {
 	WriteOutNode * write_out_node = new WriteOutNode;
 	write_out_node->inputPipe = oldPipe;
 	write_out_node->outSchema = oldSchema;
-	write_out_node->filePointer = stdout;
 	write_out_node->left = child;
+
+	if (does_file_exist(OUTPUT_MODE_CONFIG_FILE)) {
+		ifstream input;
+		input.open(OUTPUT_MODE_CONFIG_FILE);
+
+		int mode;
+		input >> mode;
+
+		if (mode == 0) {
+			write_out_node->filePointer = stdout;
+			EVALUATE = true;
+		} else if (mode == 2) {
+			EVALUATE = false;
+		} else {
+			string file_name;
+			input >> file_name;
+			FILE * file = fopen(file_name.c_str(), "w");
+			write_out_node->filePointer = file;
+			EVALUATE = true;
+		}
+		input.close();
+	} else {
+		write_out_node->filePointer = stdout;
+		EVALUATE = true;
+	}
+
 	return write_out_node;
 }
 
@@ -412,7 +462,6 @@ ProjectNode * constructProjectNode(QueryPlanNode * child) {
 
 	projectNode->numOfAttsOutput = keepAttributes.size();
 	projectNode->numOfAttsInput = numOfAtts;
-	projectNode->keepme = keepAttributes.data();
 	projectNode->keepme = (int *) malloc(sizeof(int) * keepAttributes.size());
 	int count = 0;
 	for (auto x : keepAttributes) {
@@ -607,3 +656,7 @@ void remove_from_catalog(string rel_name) {
 	outfile.close();
 }
 
+bool does_file_exist(const std::string& name) {
+	ifstream f(name.c_str());
+	return f.good();
+}
