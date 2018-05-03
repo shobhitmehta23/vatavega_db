@@ -7,6 +7,7 @@ void printNodeBoundary();
 void printPipe(Pipe *pipe, bool ifInputPipe);
 char* getRelationName(TableList* table);
 char * mergeThreeString(char *str1, char *str2, char *str3);
+int print_pipe_to_stdio(Pipe &in_pipe, Schema *schema, bool print);
 
 int QueryPlanNode::pipeIdCounter = 0;
 QueryPlanNode::QueryPlanNode(QueryNodeType nodeType) {
@@ -50,6 +51,7 @@ void QueryPlanNode::executeQueryTreeHelper(QueryPlanNode *queryPlanNode) {
 
 	executeQueryTreeHelper(queryPlanNode->left);
 	executeQueryTreeHelper(queryPlanNode->right);
+	cout << "Node Type: " << queryPlanNode->nodeType << endl;
 	queryPlanNode->executeNode();
 }
 
@@ -85,10 +87,11 @@ void SelectFileNode::printNode() {
 
 void SelectFileNode::executeNode() {
 	/*Execute the relational operation.*/
-	SelectFile selectFileOp;
-	DBFile tableFile;
-	tableFile.Open(string(strcat(table->tableName, ".bin")).c_str());
-	selectFileOp.Run(tableFile, *outputPipe, cnf, literal);
+	SelectFile* selectFileOp = new SelectFile;
+	DBFile* tableFile = new DBFile;
+	tableFile->Open(string(strcat(table->tableName, ".bin")).c_str());
+	selectFileOp->Run(*tableFile, *outputPipe, cnf, literal);
+	//tableFile.Close();
 	//selectFileOp.WaitUntilDone();
 	/*Rel Op execution done.*/
 }
@@ -194,8 +197,8 @@ void JoinNode::printNode() {
 
 void JoinNode::executeNode() {
 	/*Execute the relational operation.*/
-	Join joinOp;
-	joinOp.Run(*inputPipe1, *inputPipe2, *outputPipe, cnf, literal);
+	Join *joinOp = new Join;
+	joinOp->Run(*inputPipe1, *inputPipe2, *outputPipe, cnf, literal);
 	//joinOp.WaitUntilDone();
 	/*Rel Op execution done.*/
 }
@@ -203,8 +206,6 @@ void JoinNode::executeNode() {
 JoinNode::JoinNode(QueryPlanNode* node1, QueryPlanNode* node2, bool doApply,
 		Statistics &stats, AndList* query) :
 		QueryPlanNode(Join_Node) {
-	inputPipe1 = node1->outputPipe;
-	inputPipe2 = node2->outputPipe;
 	estimate = 0;
 	vector<char*> relations;
 
@@ -241,6 +242,8 @@ JoinNode::JoinNode(QueryPlanNode* node1, QueryPlanNode* node2, bool doApply,
 			stats.group_to_table_info_map[stats.relation_to_group_map[relNames.at(
 					0)]];
 	if (doApply) {
+		inputPipe1 = node1->outputPipe;
+		inputPipe2 = node2->outputPipe;
 		outputPipe = new Pipe(100, ++pipeIdCounter);
 
 		int numberOfAtt1 = node1->outSchema->GetNumAtts();
@@ -304,8 +307,8 @@ void SelectPipeNode::printNode() {
 
 void SelectPipeNode::executeNode() {
 	/*Execute the relational operation.*/
-	SelectPipe selectPipeOp;
-	selectPipeOp.Run(*inputPipe, *outputPipe, cnf, literal);
+	SelectPipe *selectPipeOp = new SelectPipe;
+	selectPipeOp->Run(*inputPipe, *outputPipe, cnf, literal);
 	//joinOp.WaitUntilDone();
 	/*Rel Op execution done.*/
 }
@@ -326,8 +329,8 @@ void GroupByNode::printNode() {
 
 void GroupByNode::executeNode() {
 	/*Execute the relational operation.*/
-	GroupBy groupByOp;
-	groupByOp.Run(*inputPipe, *outputPipe, *orderMaker, *function);
+	GroupBy *groupByOp = new GroupBy;
+	groupByOp->Run(*inputPipe, *outputPipe, *orderMaker, *function);
 	//groupByOp.WaitUntilDone();
 	/*Rel Op execution done.*/
 }
@@ -346,8 +349,8 @@ void SumNode::printNode() {
 
 void SumNode::executeNode() {
 	/*Execute the relational operation.*/
-	Sum sumOp;
-	sumOp.Run(*inputPipe, *outputPipe, *function);
+	Sum *sumOp = new Sum;
+	sumOp->Run(*inputPipe, *outputPipe, *function);
 	//sumOp.WaitUntilDone();
 	/*Rel Op execution done.*/
 }
@@ -369,8 +372,8 @@ void ProjectNode::printNode() {
 
 void ProjectNode::executeNode() {
 	/*Execute the relational operation.*/
-	Project projectOp;
-	projectOp.Run(*inputPipe, *outputPipe, keepme, numOfAttsInput,
+	Project *projectOp = new Project;
+	projectOp->Run(*inputPipe, *outputPipe, keepme, numOfAttsInput,
 			numOfAttsOutput);
 	//projectOp.WaitUntilDone();
 	/*Rel Op execution done.*/
@@ -388,8 +391,8 @@ void DistinctNode::printNode() {
 
 void DistinctNode::executeNode() {
 	/*Execute the relational operation.*/
-	DuplicateRemoval dupRemovalOp;
-	dupRemovalOp.Run(*inputPipe, *outputPipe, *outSchema); //projectOp.WaitUntilDone();
+	DuplicateRemoval* dupRemovalOp = new DuplicateRemoval;
+	dupRemovalOp->Run(*inputPipe, *outputPipe, *outSchema); //projectOp.WaitUntilDone();
 	/*Rel Op execution done.*/
 }
 
@@ -403,11 +406,28 @@ void WriteOutNode::printNode() {
 }
 
 void WriteOutNode::executeNode() {
+	cout << "Inside write out **************************************" << endl;
 	/*Execute the relational operation.*/
-	WriteOut writeOp;
-	writeOp.Run(*inputPipe, filePointer, *outSchema);
-	writeOp.WaitUntilDone();
+	if (false) {
+		WriteOut *writeOp = new WriteOut;
+		writeOp->Run(*inputPipe, filePointer, *outSchema);
+		//writeOp.WaitUntilDone();
+	} else {
+		print_pipe_to_stdio(*inputPipe, outSchema, true);
+	}
 	/*Rel Op execution done.*/
+}
+
+int print_pipe_to_stdio(Pipe &in_pipe, Schema *schema, bool print) {
+	Record rec;
+	int cnt = 0;
+	while (in_pipe.Remove(&rec)) {
+		if (print) {
+			rec.Print(schema);
+		}
+		cnt++;
+	}
+	return cnt;
 }
 
 void printSchema(Schema& schema) {
